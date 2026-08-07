@@ -226,11 +226,13 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .client-search input{width:100%;font-family:inherit;font-size:0.75rem;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);outline:none}
 .client-search input:focus{border-color:var(--accent)}
 .sol-name{color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sol-client{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.sol-meta{font-size:0.5625rem;color:var(--text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="login-wrapper" id="loginWrapper"><div class="login-card"><div class="login-brand"><div class="login-brand-icon"><i data-lucide="cpu"></i></div><h1>RPASmartBot</h1><p>Intelligent Operations Platform</p></div><div class="login-tabs"><button class="login-tab active" onclick="switchTab('login')">Entrar</button><button class="login-tab" onclick="switchTab('register')">Cadastrar</button></div><div class="login-msg error" id="loginErr"></div><div class="login-msg info" id="loginInfo"></div><div id="loginForm"><div class="login-field"><label>Email ou CPF</label><input type="text" id="login-id"></div><div class="login-field"><label>Senha</label><input type="password" id="login-pass" onkeydown="if(event.key==='Enter')doLogin()"></div><button class="login-btn" onclick="doLogin()">Entrar</button></div><div id="registerForm" style="display:none;"><div class="login-field"><label>Nome</label><input type="text" id="reg-name"></div><div class="login-field"><label>Email</label><input type="email" id="reg-email"></div><div class="login-field"><label>CPF</label><input type="text" id="reg-cpf" oninput="maskCPF(this)"></div><div class="login-field"><label>Senha</label><input type="password" id="reg-pass"></div><div class="login-field"><label>Confirmar</label><input type="password" id="reg-pass2" onkeydown="if(event.key==='Enter')doRegister()"></div><button class="login-btn" onclick="doRegister()">Solicitar Acesso</button></div></div></div>
-<div class="shell" id="appShell"><nav class="sidebar" id="sidebar"><div class="sidebar-brand"><div class="sidebar-brand-logo"><i data-lucide="cpu"></i></div><div class="sidebar-brand-text"><div class="t">RPASmartBot</div><div class="s">Smart Ops</div></div></div><div class="nav-label">Incidentes</div><button class="nav-item active" data-page="active" onclick="nav('active')"><i data-lucide="alert-triangle"></i>Ativos</button><button class="nav-item" data-page="resolved" onclick="nav('resolved')"><i data-lucide="check-circle"></i>Resolvidos</button><button class="nav-item" data-page="create" onclick="nav('create')"><i data-lucide="plus-circle"></i>Registrar</button><div class="nav-divider"></div><div class="nav-label">Automação</div><button class="nav-item" onclick="window.location.href='automacoes.html'"><i data-lucide="route"></i>Automações</button><div class="nav-divider"></div><div class="nav-label">Sistema</div><button class="nav-item" data-page="logs" onclick="nav('logs')"><i data-lucide="file-text"></i>Logs</button><button class="nav-item hidden" data-page="users" id="navUsers" onclick="nav('users')"><i data-lucide="users"></i>Usuários</button><button class="nav-item hidden" data-page="settings" id="navSettings" onclick="nav('settings')"><i data-lucide="settings"></i>Configurações</button><div class="sidebar-footer"><div class="user-info"><span class="user-avatar" id="userAvatar"></span><span id="userName"></span><span class="user-role-badge" id="userRoleBadge"></span></div><div class="auth-indicator"><span class="auth-dot off" id="gmailDot"></span><span id="gmailStatusLabel">Gmail off</span></div><button class="logout-btn" onclick="doLogout()">Sair</button></div></nav><div class="main-content"><div class="mobile-header" style="display:none"><button onclick="document.getElementById('sidebar').classList.toggle('open')" style="background:none;border:none;cursor:pointer"><i data-lucide="menu" style="width:20px;height:20px"></i></button><span style="font-weight:700;font-size:0.8125rem">RPASmartBot</span></div><div class="page active" id="page-active"></div><div class="page" id="page-resolved"></div><div class="page" id="page-create"></div><div class="page" id="page-detail"></div><div class="page" id="page-logs"></div><div class="page" id="page-users"></div><div class="page" id="page-settings"></div></div></div>
+<div class="shell" id="appShell"><nav class="sidebar" id="sidebar"><div class="sidebar-brand"><div class="sidebar-brand-logo"><i data-lucide="cpu"></i></div><div class="sidebar-brand-text"><div class="t">RPASmartBot</div><div class="s">Smart Ops</div></div></div><div class="nav-label">Incidentes</div><button class="nav-item active" data-page="active" onclick="nav('active')"><i data-lucide="alert-triangle"></i>Ativos</button><button class="nav-item" data-page="resolved" onclick="nav('resolved')"><i data-lucide="check-circle"></i>Resolvidos</button><button class="nav-item" data-page="create" onclick="nav('create')"><i data-lucide="plus-circle"></i>Registrar</button><div class="nav-divider"></div><div class="nav-label">Automação</div><button class="nav-item" data-page="rpa" onclick="nav('rpa')"><i data-lucide="route"></i>Encaminhamento</button><div class="nav-divider"></div><div class="nav-label">Sistema</div><button class="nav-item" data-page="logs" onclick="nav('logs')"><i data-lucide="file-text"></i>Logs</button><button class="nav-item hidden" data-page="users" id="navUsers" onclick="nav('users')"><i data-lucide="users"></i>Usuários</button><button class="nav-item hidden" data-page="settings" id="navSettings" onclick="nav('settings')"><i data-lucide="settings"></i>Configurações</button><div class="sidebar-footer"><div class="user-info"><span class="user-avatar" id="userAvatar"></span><span id="userName"></span><span class="user-role-badge" id="userRoleBadge"></span></div><div class="auth-indicator"><span class="auth-dot off" id="gmailDot"></span><span id="gmailStatusLabel">Gmail off</span></div><button class="logout-btn" onclick="doLogout()">Sair</button></div></nav><div class="main-content"><div class="mobile-header" style="display:none"><button onclick="document.getElementById('sidebar').classList.toggle('open')" style="background:none;border:none;cursor:pointer"><i data-lucide="menu" style="width:20px;height:20px"></i></button><span style="font-weight:700;font-size:0.8125rem">RPASmartBot</span></div><div class="page active" id="page-active"></div><div class="page" id="page-resolved"></div><div class="page" id="page-create"></div><div class="page" id="page-detail"></div><div class="page" id="page-rpa"></div><div class="page" id="page-logs"></div><div class="page" id="page-users"></div><div class="page" id="page-settings"></div></div></div>
 <div class="modal-overlay" id="confirmModal"><div class="modal-card"><div class="modal-title" id="modalTitle"></div><div class="modal-desc" id="modalDesc"></div><div class="modal-detail" id="modalDetail"></div><div class="modal-actions" id="modalActions"></div></div></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -267,11 +269,11 @@ function hideMsg(){document.getElementById('loginErr').classList.remove('show');
 async function doLogin(){hideMsg();const id=document.getElementById('login-id').value.trim(),pw=document.getElementById('login-pass').value;if(!id||!pw){showErr('Preencha tudo.');return;}const hash=await hashPw(pw);const{data,error}=await sb.from('users').select('*').or(`email.eq.${id},cpf.eq.${id}`).eq('password_hash',hash).single();if(error||!data){showErr('Credenciais inválidas.');return;}if(data.status==='pending'){showErr('Aguarde aprovação.');return;}if(data.status==='rejected'){showErr('Acesso negado.');return;}currentUser=data;localStorage.setItem('rbot_user',JSON.stringify(data));await addLog('login',data.name);enterApp();}
 async function doRegister(){hideMsg();const name=document.getElementById('reg-name').value.trim(),email=document.getElementById('reg-email').value.trim(),cpf=document.getElementById('reg-cpf').value.trim(),pw=document.getElementById('reg-pass').value,pw2=document.getElementById('reg-pass2').value;if(!name||!email||!cpf||!pw){showErr('Preencha tudo.');return;}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('Email inválido.');return;}if(!validateCPF(cpf)){showErr('CPF inválido.');return;}if(pw.length<6){showErr('Min 6.');return;}if(pw!==pw2){showErr('Senhas diferentes.');return;}const{count}=await sb.from('users').select('*',{count:'exact',head:true});const isFirst=count===0;const hash=await hashPw(pw);const{error}=await sb.from('users').insert({id:genId('u'),name,email,cpf:cleanCPF(cpf),password_hash:hash,role:isFirst?'superadmin':'operator',status:isFirst?'approved':'pending'});if(error){showErr(error.message.includes('duplicate')?'Já existe.':error.message);return;}await addLog('register',name);if(isFirst){const{data}=await sb.from('users').select('*').eq('email',email).single();currentUser=data;localStorage.setItem('rbot_user',JSON.stringify(data));enterApp();}else showInfo('Aguarde aprovação.');}
 function doLogout(){addLog('logout','');currentUser=null;localStorage.removeItem('rbot_user');document.getElementById('appShell').classList.remove('active');document.getElementById('loginWrapper').style.display='';}
-function enterApp(){document.getElementById('loginWrapper').style.display='none';document.getElementById('appShell').classList.add('active');document.getElementById('userName').textContent=currentUser.name;document.getElementById('userAvatar').textContent=currentUser.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();const b=document.getElementById('userRoleBadge');b.textContent=currentUser.role==='superadmin'?'Super':currentUser.role==='admin'?'Admin':'Op';b.className='user-role-badge '+currentUser.role;const navUsers=document.getElementById('navUsers');if(navUsers)navUsers.classList.toggle('hidden',!isSA());const navSettings=document.getElementById('navSettings');if(navSettings)navSettings.classList.toggle('hidden',!isSA());initGmail();nav('active');lucide.createIcons();}
+function enterApp(){document.getElementById('loginWrapper').style.display='none';document.getElementById('appShell').classList.add('active');document.getElementById('userName').textContent=currentUser.name;document.getElementById('userAvatar').textContent=currentUser.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();const b=document.getElementById('userRoleBadge');b.textContent=currentUser.role==='superadmin'?'Super':currentUser.role==='admin'?'Admin':'Op';b.className='user-role-badge '+currentUser.role;document.getElementById('navUsers').classList.toggle('hidden',!isSA());document.getElementById('navSettings').classList.toggle('hidden',!isSA());initGmail();nav('active');lucide.createIcons();}
 async function checkSession(){const saved=localStorage.getItem('rbot_user');if(!saved)return;const u=JSON.parse(saved);const{data}=await sb.from('users').select('*').eq('id',u.id).eq('status','approved').single();if(data){currentUser=data;localStorage.setItem('rbot_user',JSON.stringify(data));enterApp();}else localStorage.removeItem('rbot_user');}
 
 // === NAV ===
-function nav(page,data){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');document.querySelectorAll('.nav-item[data-page]').forEach(n=>n.classList.remove('active'));const nb=document.querySelector(`.nav-item[data-page="${page}"]`);if(nb)nb.classList.add('active');if(page==='active')renderActive();if(page==='resolved')renderResolved();if(page==='create')renderCreate();if(page==='detail'&&data)renderDetail(data);if(page==='logs')renderLogs();if(page==='users')renderUsers();if(page==='settings')renderSettings();document.getElementById('sidebar').classList.remove('open');document.querySelector('.main-content').scrollTop=0;}
+function nav(page,data){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');document.querySelectorAll('.nav-item[data-page]').forEach(n=>n.classList.remove('active'));const nb=document.querySelector(`.nav-item[data-page="${page}"]`);if(nb)nb.classList.add('active');if(page==='active')renderActive();if(page==='resolved')renderResolved();if(page==='create')renderCreate();if(page==='detail'&&data)renderDetail(data);if(page==='rpa')renderRPA();if(page==='logs')renderLogs();if(page==='users')renderUsers();if(page==='settings')renderSettings();document.getElementById('sidebar').classList.remove('open');document.querySelector('.main-content').scrollTop=0;}
 
 // === INCIDENTS ===
 async function renderActive(){const{data:all}=await sb.from('incidents').select('*').order('created_at',{ascending:false});const a=(all||[]).filter(i=>i.status==='active');document.getElementById('page-active').innerHTML=`<div class="page-header"><div><h1 class="page-title">Ativos</h1></div><button class="btn btn-primary" onclick="nav('create')"><i data-lucide="plus" style="width:13px;height:13px"></i>Novo</button></div><div class="stats-row"><div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value danger">${a.length}</div></div><div class="stat-card"><div class="stat-label">Total</div><div class="stat-value accent">${(all||[]).length}</div></div></div>${a.length?`<div class="cards-grid">${a.map(i=>cCard(i,'active')).join('')}</div>`:'<div class="empty-state">Nenhum incidente ativo.</div>'}`;lucide.createIcons();}
@@ -453,31 +455,57 @@ async function rpaAuth(){
 
 
 // ===== NOVO: Carregar Clientes =====
+function rpaExtractClientArray(payload){
+  if(Array.isArray(payload)) return payload;
+  if(!payload || typeof payload!=='object') return [];
+
+  const preferredKeys=['data','items','content','clients','rows','records','results'];
+  for(const key of preferredKeys){
+    if(Array.isArray(payload[key])) return payload[key];
+  }
+
+  const nestedKeys=['response','result','payload','value'];
+  for(const key of nestedKeys){
+    const nested=rpaExtractClientArray(payload[key]);
+    if(nested.length) return nested;
+  }
+
+  for(const value of Object.values(payload)){
+    if(Array.isArray(value) && value.every(item=>typeof item==='object')) return value;
+  }
+
+  return [];
+}
+
 async function rpaLoadClients(){
   const url=gv('rpa-url').replace(/\/$/,'');
-  const page=document.getElementById('rpa-client-page').value||1;
-  const size=document.getElementById('rpa-client-size').value||50;
+  const page=Math.max(1, Number(document.getElementById('rpa-client-page').value || 1));
+  const size=Math.max(1, Number(document.getElementById('rpa-client-size').value || 50));
   const endpoint=`${url}:45715/external/integrations/thirdparty/getclient?page=${page}&pageSize=${size}`;
-  
+
   rpaLog('req',`GET ${endpoint}`);
-  
+
   try{
     const r=await fetch(getProxy(endpoint),{headers:{'Authorization':`Bearer ${rpaToken}`,'Content-Type':'application/json'}});
     const text=await r.text();
-    
+
     if(!r.ok){rpaLog('err',`${r.status} ${text}`);throw new Error(`${r.status}`);}
-    
+
     const data=JSON.parse(text);
-    rpaClients=Array.isArray(data)?data:(data.data||data.result||data.items||data.content||[]);
+    rpaClients=rpaExtractClientArray(data);
     rpaLog('ok',`200 OK | ${rpaClients.length} clientes retornados`);
-    
+
+    if(!rpaClients.length){
+      const preview=JSON.stringify(data).slice(0,500);
+      rpaLog('err',`Nenhum cliente localizado no payload | preview: ${preview}`);
+    }
+
     rpaSelectedClients=new Set();
     document.getElementById('rpaClientList').classList.remove('hidden');
     document.getElementById('rpaClientCount').textContent=`${rpaClients.length} clientes`;
     rpaRenderClients();
-    showToast(`${rpaClients.length} clientes carregados.`,'success');
-    
-    // Show next step
+
+    showToast(rpaClients.length?`${rpaClients.length} clientes carregados.`:`Nenhum cliente encontrado na página ${page}.`,rpaClients.length?'success':'error');
     document.getElementById('rS3').classList.remove('hidden');
   }catch(e){
     showToast('Erro: '+e.message,'error');
@@ -486,26 +514,35 @@ async function rpaLoadClients(){
 
 function rpaRenderClients(filter=''){
   const list=document.getElementById('rpaClientItems');
-  const filtered=filter?rpaClients.filter(c=>{
-    const name=(c.name||c.clientName||c.razaoSocial||c.fantasyName||JSON.stringify(c)).toLowerCase();
-    return name.includes(filter.toLowerCase());
+  const query=(filter||'').toLowerCase().trim();
+  const getId=c=>String(c?.id ?? c?.clientId ?? c?.idClient ?? c?.code ?? c?.txId ?? '');
+  const getName=c=>c?.name || c?.clientName || c?.razaoSocial || c?.fantasyName || c?.socialReason || 'Sem nome';
+  const getEmail=c=>c?.email || c?.emailNfe || '';
+  const getCity=c=>[c?.city,c?.state].filter(Boolean).join('/');
+  const getDoc=c=>c?.txIdFormated || c?.txId || c?.identity || '';
+
+  const filtered=query?rpaClients.filter(c=>{
+    const bag=[getId(c),getName(c),getEmail(c),getCity(c),getDoc(c)].join(' ').toLowerCase();
+    return bag.includes(query);
   }):rpaClients;
-  
-  const getId=c=>c.id||c.clientId||c.idClient||c.code||'';
-  const getName=c=>c.name||c.clientName||c.razaoSocial||c.fantasyName||c.socialReason||JSON.stringify(c);
-  
-  list.innerHTML=filtered.map(c=>{
-    const id=String(getId(c));
+
+  list.innerHTML=filtered.length ? filtered.map(c=>{
+    const id=getId(c);
     const sel=rpaSelectedClients.has(id);
-    return `<div class="sol-item ${sel?'selected':''}" onclick="rpaToggleClient('${id}')">
-      <input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation();rpaToggleClient('${id}')">
-      <span class="sol-id">#${id}</span>
-      <span class="sol-name">${esc(getName(c))}</span>
+    const meta=[getDoc(c), getCity(c), getEmail(c)].filter(Boolean).join(' • ');
+    return `<div class=\"sol-item ${sel?'selected':''}\" onclick=\"rpaToggleClient('${id}')\">
+      <input type=\"checkbox\" ${sel?'checked':''} onclick=\"event.stopPropagation();rpaToggleClient('${id}')\">
+      <span class=\"sol-id\">#${id}</span>
+      <div class=\"sol-client\">
+        <span class=\"sol-name\">${esc(getName(c))}</span>
+        <span class=\"sol-meta\">${esc(meta || 'Sem detalhes adicionais')}</span>
+      </div>
     </div>`;
-  }).join('');
-  
+  }).join('') : '<div class=\"empty-state\" style=\"padding:18px 12px\">Nenhum cliente encontrado para os filtros informados.</div>';
+
+  document.getElementById('rpaClientCount').textContent=`${filtered.length} cliente(s)`;
   document.getElementById('rpaClientSelected').textContent=rpaSelectedClients.size;
-  document.getElementById('rpaClientSelectAll').checked=rpaSelectedClients.size===rpaClients.length;
+  document.getElementById('rpaClientSelectAll').checked=filtered.length>0 && filtered.every(c=>rpaSelectedClients.has(getId(c)));
 }
 
 function rpaFilterClients(){
