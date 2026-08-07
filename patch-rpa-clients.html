@@ -1,0 +1,479 @@
+<!-- skill:chrome -->
+<style>
+/* Credit line — bottom-right */
+.design-ui-credit {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  font: 11px/1 system-ui, sans-serif;
+  color: rgba(128,128,128,0.5);
+  pointer-events: none;
+  z-index: 2147483647;
+  transition: opacity 0.4s ease;
+  user-select: none;
+  letter-spacing: 0.02em;
+}
+
+/* Hide chrome on touch devices */
+@media (hover: none) {
+  .design-ui-credit { display: none; }
+}
+
+/* Print fixes */
+@media print {
+  * {
+    transition: none !important;
+    animation: none !important;
+    box-shadow: none !important;
+  }
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .design-ui-credit { display: none !important; }
+}
+
+</style>
+<script>
+(function () {
+    // Design-ui pages are single compositions, so the whole body is editable.
+    function markEditable() {
+        document.body.classList.add('artifact-editable');
+    }
+
+    // Credit badge with idle-fade. Hover devices only.
+    function initChromeUI() {
+        if (!matchMedia('(hover: hover)').matches) return;
+
+        var credit = document.createElement('div');
+        credit.className = 'design-ui-credit';
+        credit.setAttribute('aria-hidden', 'true');
+        credit.innerHTML = '\u{1F49C} by ClickUp Brain';
+        document.body.appendChild(credit);
+
+        var timer = null;
+        var fade = function (out) { credit.style.opacity = out ? '0' : ''; };
+        fade(true);
+        var show = function () {
+            fade(false);
+            clearTimeout(timer);
+            timer = setTimeout(function () { fade(true); }, 3000);
+        };
+        document.addEventListener('mousemove', show);
+        show();
+    }
+
+    function init() {
+        markEditable();
+        initChromeUI();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+
+</script>
+<!-- /skill:chrome -->
+<!-- skill:libraries -->
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js" integrity="sha384-wHFvAtjmgnkA2PJcMsDaCgdipf7X7YV44X/igbLHpvGiq6T5/PvFKl93grpvtbQT" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",()=>lucide.createIcons())</script>
+<!-- /skill:libraries -->
+<!--
+  PATCH: Módulo RPA com Step de Clientes + Console de API
+  
+  No seu index.html funcional, SUBSTITUA toda a função renderRPA() e as funções RPA
+  relacionadas (rpaAuth, rpaLoad, rpaParse, etc.) por este bloco completo.
+  
+  Também adicione estas variáveis no topo (junto com as outras let rpaToken, etc.):
+  let rpaClients=[], rpaSelectedClients=new Set();
+-->
+
+<script>
+// ===== ADICIONE estas variáveis junto com as outras do RPA: =====
+// let rpaClients=[], rpaSelectedClients=new Set();
+
+
+// ===== SUBSTITUA renderRPA() por esta: =====
+
+function renderRPA(){
+  const cfg=JSON.parse(localStorage.getItem('rbot_rpa_cfg')||'{}');
+  document.getElementById('page-rpa').innerHTML=`
+    <div class="page-header"><div><h1 class="page-title">Encaminhamento RPA</h1><p class="page-subtitle">Encaminhamento em lote via API do ERP</p></div></div>
+
+    <!-- STEP 1: AUTH -->
+    <div class="card"><div class="card-title"><span class="step">1</span> Conexão com ERP</div>
+      <div class="grid-2">
+        <div class="field full"><label>Proxy CORS</label><input type="text" id="rpa-proxy" class="mono" value="${esc(cfg.proxy||'')}" placeholder="https://proxy/"><span class="hint">Opcional. Deixe vazio se não precisar.</span></div>
+        <div class="field full"><label>URL Base do ERP</label><input type="text" id="rpa-url" class="mono" value="${esc(cfg.url||'')}" placeholder="https://erp.cliente.com.br"></div>
+        <div class="field"><label>Client ID</label><input type="text" id="rpa-cid" class="mono" value="${esc(cfg.cid||'')}"></div>
+        <div class="field"><label>Client Secret</label><input type="password" id="rpa-cs" class="mono" value="${esc(cfg.cs||'')}"></div>
+        <div class="field full"><label>Syndata</label><input type="text" id="rpa-syn" class="mono" value="${esc(cfg.syn||'')}"></div>
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-warning" onclick="rpaAuth()"><i data-lucide="key" style="width:13px;height:13px"></i>Gerar Token</button>
+        <button class="btn btn-ghost" onclick="saveRpaCfg()">Salvar Config</button>
+      </div>
+      <div class="rpa-status" id="rpaSt" style="display:none"></div>
+      <div class="api-console hidden" id="rpaConsole"></div>
+    </div>
+
+    <!-- STEP 2: CLIENTES -->
+    <div class="card hidden" id="rS2"><div class="card-title"><span class="step">2</span> Clientes</div>
+      <p style="font-size:0.6875rem;color:var(--text-secondary);margin-bottom:12px">Carregue e selecione os clientes para filtrar as solicitações.</p>
+      <div class="grid-2">
+        <div class="field"><label>Página</label><input type="number" id="rpa-client-page" value="1" min="1"></div>
+        <div class="field"><label>Itens por página</label><input type="number" id="rpa-client-size" value="50" min="1" max="500"></div>
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-primary" onclick="rpaLoadClients()"><i data-lucide="users" style="width:13px;height:13px"></i>Carregar Clientes</button>
+      </div>
+      <div class="hidden" id="rpaClientList" style="margin-top:14px">
+        <div class="client-search"><input type="text" id="rpaClientSearch" placeholder="Buscar cliente..." oninput="rpaFilterClients()"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:0.625rem;font-weight:700;color:var(--accent)" id="rpaClientCount">0 clientes</span>
+          <label class="select-all-label"><input type="checkbox" id="rpaClientSelectAll" onchange="rpaToggleAllClients()"> Todas</label>
+        </div>
+        <div class="sol-list" id="rpaClientItems"></div>
+        <div style="margin-top:8px;font-size:0.625rem;color:var(--text-tertiary)"><strong id="rpaClientSelected">0</strong> selecionado(s)</div>
+      </div>
+    </div>
+
+    <!-- STEP 3: EQUIPES/MOTIVOS/STATUS -->
+    <div class="card hidden" id="rS3"><div class="card-title"><span class="step">3</span> Equipes, Motivos e Status</div>
+      <button class="btn btn-primary" onclick="rpaLoad()"><i data-lucide="download" style="width:13px;height:13px"></i>Carregar Dados de Encaminhamento</button>
+    </div>
+
+    <!-- STEP 4: PARÂMETROS -->
+    <div class="card hidden" id="rS4"><div class="card-title"><span class="step">4</span> Parâmetros do Encaminhamento</div>
+      <div class="grid-3">
+        <div class="field"><label>Equipe</label><select id="rpa-team"><option value="">Selecione...</option></select></div>
+        <div class="field"><label>Motivo</label><select id="rpa-motive"><option value="">Selecione...</option></select></div>
+        <div class="field"><label>Status</label><select id="rpa-status"><option value="">Selecione...</option></select></div>
+      </div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="field"><label>Observação</label><input type="text" id="rpa-obs" placeholder="Texto do encaminhamento"></div>
+        <div class="field"><label>Responsável ID</label><input type="text" id="rpa-resp" placeholder="Opcional (vazio = equipe)"></div>
+      </div>
+      <div class="field full" style="margin-top:12px">
+        <label>IDs das Solicitações (assignmentId)</label>
+        <textarea id="rpa-ids" class="mono" placeholder="Um por linha ou separados por vírgula&#10;Ex: 12345, 12346, 12347"></textarea>
+        <span class="hint">Cole os protocolos/IDs separados por linha, vírgula ou ponto e vírgula</span>
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-primary" onclick="rpaParse()"><i data-lucide="list" style="width:13px;height:13px"></i>Carregar Solicitações</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: SELECIONAR E ENCAMINHAR -->
+    <div class="card hidden" id="rS5"><div class="card-title"><span class="step">5</span> Selecionar e Encaminhar</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:0.625rem;font-weight:700;color:var(--accent)" id="rpaC">0</span>
+        <label class="select-all-label"><input type="checkbox" id="rpaSA" onchange="rpaToggleAll()"> Todas</label>
+      </div>
+      <div class="sol-list" id="rpaSL"></div>
+      <div class="forward-bar hidden" id="rpaFB">
+        <div class="forward-summary"><strong id="rpaSC">0</strong> selecionadas</div>
+        <button class="btn btn-success btn-lg" onclick="rpaConfirm()"><i data-lucide="send" style="width:13px;height:13px"></i>Encaminhar</button>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="card hidden" id="rpaLogS"><div class="card-title"><i data-lucide="terminal" style="width:13px;height:13px"></i> Log de Execução</div>
+      <div style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:3px" id="rpaLog"></div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+
+// ===== SUBSTITUA saveRpaCfg: =====
+function saveRpaCfg(){
+  localStorage.setItem('rbot_rpa_cfg',JSON.stringify({proxy:gv('rpa-proxy'),url:gv('rpa-url'),cid:gv('rpa-cid'),cs:gv('rpa-cs'),syn:gv('rpa-syn')}));
+  showToast('Config salva!','success');
+}
+
+
+// ===== SUBSTITUA getProxy: =====
+function getProxy(t){const p=gv('rpa-proxy');return p?p.replace(/\/$/,'')+'/'+t:t;}
+
+
+// ===== API Console Logger =====
+function rpaLog(type, msg){
+  const con=document.getElementById('rpaConsole');
+  if(!con)return;
+  con.classList.remove('hidden');
+  const time=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const cls=type==='req'?'req':type==='ok'?'res-ok':'res-err';
+  con.innerHTML+=`<div class="${cls}">[${time}] ${msg}</div>`;
+  con.scrollTop=con.scrollHeight;
+}
+
+
+// ===== SUBSTITUA rpaAuth: =====
+async function rpaAuth(){
+  const url=gv('rpa-url').replace(/\/$/,''),cid=gv('rpa-cid'),cs=gv('rpa-cs'),syn=gv('rpa-syn');
+  if(!url||!cid||!cs||!syn){showToast('Preencha todos os campos.','error');return;}
+  const st=document.getElementById('rpaSt');
+  st.style.display='';st.className='rpa-status pending';st.textContent='Autenticando...';
+  
+  const endpoint=`${url}:45700/connect/token`;
+  rpaLog('req',`POST ${endpoint}`);
+  
+  try{
+    const body=`grant_type=${encodeURIComponent('client_credentials')}&scope=${encodeURIComponent('syngw ')}&client_id=${encodeURIComponent(cid)}&client_secret=${encodeURIComponent(cs)}&syndata=${encodeURIComponent(syn)}`;
+    const r=await fetch(getProxy(endpoint),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+    const text=await r.text();
+    
+    if(!r.ok){rpaLog('err',`${r.status} ${text}`);throw new Error(`${r.status}: ${text}`);}
+    
+    const d=JSON.parse(text);
+    rpaLog('ok',`200 OK | access_token: ${d.access_token?.substring(0,20)}... | expires_in: ${d.expires_in}`);
+    
+    if(!d.access_token)throw new Error('Token não retornado.');
+    rpaToken=d.access_token;
+    st.className='rpa-status ok';st.textContent=`Token OK! Expira em ${Math.floor((d.expires_in||3600)/60)}min`;
+    document.getElementById('rS2').classList.remove('hidden');
+    showToast('Autenticado!','success');
+  }catch(e){
+    st.className='rpa-status err';st.textContent=e.message;
+    showToast('Erro: '+e.message,'error');
+  }
+}
+
+
+// ===== NOVO: Carregar Clientes =====
+async function rpaLoadClients(){
+  const url=gv('rpa-url').replace(/\/$/,'');
+  const page=document.getElementById('rpa-client-page').value||1;
+  const size=document.getElementById('rpa-client-size').value||50;
+  const endpoint=`${url}:45715/external/integrations/thirdparty/getclient?page=${page}&pageSize=${size}`;
+  
+  rpaLog('req',`GET ${endpoint}`);
+  
+  try{
+    const r=await fetch(getProxy(endpoint),{headers:{'Authorization':`Bearer ${rpaToken}`,'Content-Type':'application/json'}});
+    const text=await r.text();
+    
+    if(!r.ok){rpaLog('err',`${r.status} ${text}`);throw new Error(`${r.status}`);}
+    
+    const data=JSON.parse(text);
+    rpaClients=Array.isArray(data)?data:(data.data||data.result||data.items||data.content||[]);
+    rpaLog('ok',`200 OK | ${rpaClients.length} clientes retornados`);
+    
+    rpaSelectedClients=new Set();
+    document.getElementById('rpaClientList').classList.remove('hidden');
+    document.getElementById('rpaClientCount').textContent=`${rpaClients.length} clientes`;
+    rpaRenderClients();
+    showToast(`${rpaClients.length} clientes carregados.`,'success');
+    
+    // Show next step
+    document.getElementById('rS3').classList.remove('hidden');
+  }catch(e){
+    showToast('Erro: '+e.message,'error');
+  }
+}
+
+function rpaRenderClients(filter=''){
+  const list=document.getElementById('rpaClientItems');
+  const filtered=filter?rpaClients.filter(c=>{
+    const name=(c.name||c.clientName||c.razaoSocial||c.fantasyName||JSON.stringify(c)).toLowerCase();
+    return name.includes(filter.toLowerCase());
+  }):rpaClients;
+  
+  const getId=c=>c.id||c.clientId||c.idClient||c.code||'';
+  const getName=c=>c.name||c.clientName||c.razaoSocial||c.fantasyName||c.socialReason||JSON.stringify(c);
+  
+  list.innerHTML=filtered.map(c=>{
+    const id=String(getId(c));
+    const sel=rpaSelectedClients.has(id);
+    return `<div class="sol-item ${sel?'selected':''}" onclick="rpaToggleClient('${id}')">
+      <input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation();rpaToggleClient('${id}')">
+      <span class="sol-id">#${id}</span>
+      <span class="sol-name">${esc(getName(c))}</span>
+    </div>`;
+  }).join('');
+  
+  document.getElementById('rpaClientSelected').textContent=rpaSelectedClients.size;
+  document.getElementById('rpaClientSelectAll').checked=rpaSelectedClients.size===rpaClients.length;
+}
+
+function rpaFilterClients(){
+  const q=document.getElementById('rpaClientSearch').value;
+  rpaRenderClients(q);
+}
+
+function rpaToggleClient(id){
+  if(rpaSelectedClients.has(id))rpaSelectedClients.delete(id);
+  else rpaSelectedClients.add(id);
+  rpaRenderClients(document.getElementById('rpaClientSearch').value);
+}
+
+function rpaToggleAllClients(){
+  const all=document.getElementById('rpaClientSelectAll').checked;
+  const getId=c=>String(c.id||c.clientId||c.idClient||c.code||'');
+  if(all)rpaClients.forEach(c=>rpaSelectedClients.add(getId(c)));
+  else rpaSelectedClients.clear();
+  rpaRenderClients(document.getElementById('rpaClientSearch').value);
+}
+
+
+// ===== SUBSTITUA rpaGet e rpaPost: =====
+async function rpaGet(path,params={}){
+  const url=gv('rpa-url').replace(/\/$/,'');
+  const qs=Object.keys(params).length?'?'+new URLSearchParams(params):'';
+  const endpoint=`${url}:45715${path}${qs}`;
+  rpaLog('req',`GET ${endpoint}`);
+  const r=await fetch(getProxy(endpoint),{headers:{'Authorization':`Bearer ${rpaToken}`,'Content-Type':'application/json'}});
+  const text=await r.text();
+  if(!r.ok){rpaLog('err',`${r.status} ${text}`);throw new Error(`${r.status}`);}
+  const data=JSON.parse(text);
+  const items=Array.isArray(data)?data:(data.data||data.result||data.items||[]);
+  rpaLog('ok',`200 OK | ${items.length} itens`);
+  return items;
+}
+
+async function rpaPost(path,body){
+  const url=gv('rpa-url').replace(/\/$/,'');
+  const endpoint=`${url}:45715${path}`;
+  rpaLog('req',`POST ${endpoint} | body: ${JSON.stringify(body)}`);
+  const r=await fetch(getProxy(endpoint),{method:'POST',headers:{'Authorization':`Bearer ${rpaToken}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const text=await r.text();
+  if(!r.ok){rpaLog('err',`${r.status} ${text}`);throw new Error(`${r.status}: ${text}`);}
+  rpaLog('ok',`200 OK | ${text.substring(0,100)}`);
+  return JSON.parse(text);
+}
+
+
+// ===== SUBSTITUA rpaLoad: =====
+async function rpaLoad(){
+  try{
+    const[t,m,s]=await Promise.all([
+      rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/teams',{assignmentId:0}),
+      rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/motives'),
+      rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/incident-status')
+    ]);
+    rpaTeams=t;rpaMotives=m;rpaStatuses=s;
+    
+    const pk=(o,ks)=>{for(const k of ks)if(o[k]!==undefined)return o[k];return JSON.stringify(o);};
+    const id=o=>pk(o,['id','teamId','motiveId','statusId','value']);
+    const nm=o=>pk(o,['name','teamName','motiveName','statusName','label','description']);
+    
+    document.getElementById('rpa-team').innerHTML='<option value="">Selecione...</option>'+rpaTeams.map(x=>`<option value="${id(x)}">${esc(nm(x))}</option>`).join('');
+    document.getElementById('rpa-motive').innerHTML='<option value="">Selecione...</option>'+rpaMotives.map(x=>`<option value="${id(x)}">${esc(nm(x))}</option>`).join('');
+    document.getElementById('rpa-status').innerHTML='<option value="">Selecione...</option>'+rpaStatuses.map(x=>`<option value="${id(x)}">${esc(nm(x))}</option>`).join('');
+    
+    document.getElementById('rS4').classList.remove('hidden');
+    showToast(`${rpaTeams.length} equipes, ${rpaMotives.length} motivos, ${rpaStatuses.length} status.`,'success');
+  }catch(e){
+    showToast('Erro ao carregar: '+e.message,'error');
+  }
+}
+
+
+// ===== SUBSTITUA rpaParse: =====
+function rpaParse(){
+  const ids=[...new Set(document.getElementById('rpa-ids').value.split(/[\n,;]+/).map(s=>s.trim()).filter(s=>/^\d+$/.test(s)))];
+  if(!ids.length){showToast('Nenhum ID válido.','error');return;}
+  rpaAssignments=ids;
+  rpaSelected=new Set(ids);
+  rpaRender();
+  document.getElementById('rS5').classList.remove('hidden');
+  rpaBar();
+  showToast(`${ids.length} solicitações carregadas.`,'success');
+}
+
+
+// ===== SUBSTITUA rpaRender, rpaT, rpaToggleAll, rpaBar (agora usam rS5): =====
+function rpaRender(){
+  document.getElementById('rpaC').textContent=rpaAssignments.length+' solicitações';
+  document.getElementById('rpaSA').checked=rpaSelected.size===rpaAssignments.length;
+  document.getElementById('rpaSL').innerHTML=rpaAssignments.map(id=>`<div class="sol-item ${rpaSelected.has(id)?'selected':''}" onclick="rpaT('${id}')"><input type="checkbox" ${rpaSelected.has(id)?'checked':''} onclick="event.stopPropagation();rpaT('${id}')"><span class="sol-id">#${id}</span></div>`).join('');
+}
+function rpaT(id){if(rpaSelected.has(id))rpaSelected.delete(id);else rpaSelected.add(id);rpaRender();rpaBar();}
+function rpaToggleAll(){const a=document.getElementById('rpaSA').checked;if(a)rpaAssignments.forEach(id=>rpaSelected.add(id));else rpaSelected.clear();rpaRender();rpaBar();}
+function rpaBar(){const n=rpaSelected.size;document.getElementById('rpaFB').classList.toggle('hidden',n===0);document.getElementById('rpaSC').textContent=n;}
+
+
+// ===== SUBSTITUA rpaConfirm: =====
+function rpaConfirm(){
+  const ts=document.getElementById('rpa-team'),ms=document.getElementById('rpa-motive'),ss=document.getElementById('rpa-status');
+  if(!ts.value||!ms.value||!ss.value){showToast('Selecione equipe, motivo e status.','error');return;}
+  document.getElementById('modalTitle').textContent='Confirmar Encaminhamento';
+  document.getElementById('modalDesc').textContent='Revise antes de executar:';
+  document.getElementById('modalDetail').innerHTML=`
+    <div class="modal-detail-row"><span class="modal-detail-label">Solicitações</span><span class="modal-detail-value">${rpaSelected.size}</span></div>
+    <div class="modal-detail-row"><span class="modal-detail-label">Equipe</span><span class="modal-detail-value">${esc(ts.options[ts.selectedIndex].text)}</span></div>
+    <div class="modal-detail-row"><span class="modal-detail-label">Motivo</span><span class="modal-detail-value">${esc(ms.options[ms.selectedIndex].text)}</span></div>
+    <div class="modal-detail-row"><span class="modal-detail-label">Status</span><span class="modal-detail-value">${esc(ss.options[ss.selectedIndex].text)}</span></div>
+    <div class="modal-detail-row"><span class="modal-detail-label">Observação</span><span class="modal-detail-value">${esc(gv('rpa-obs'))||'(vazio)'}</span></div>
+    <div class="modal-detail-row"><span class="modal-detail-label">Responsável</span><span class="modal-detail-value">${gv('rpa-resp')||'Nenhum (equipe)'}</span></div>
+    <div class="modal-detail-row"><span class="modal-detail-label">Clientes selecionados</span><span class="modal-detail-value">${rpaSelectedClients.size}</span></div>`;
+  document.getElementById('modalActions').innerHTML=`<button class="btn btn-ghost" onclick="document.getElementById('confirmModal').classList.remove('active')">Cancelar</button><button class="btn btn-success btn-lg" onclick="rpaExec()">Confirmar</button>`;
+  document.getElementById('confirmModal').classList.add('active');
+}
+
+
+// ===== SUBSTITUA rpaExec: =====
+async function rpaExec(){
+  document.getElementById('confirmModal').classList.remove('active');
+  const teamId=parseInt(document.getElementById('rpa-team').value);
+  const routingMotiveId=parseInt(document.getElementById('rpa-motive').value);
+  const incidentStatusId=parseInt(document.getElementById('rpa-status').value);
+  const responsibleId=parseInt(gv('rpa-resp'))||0;
+  const motive=gv('rpa-obs');
+  const ids=[...rpaSelected];
+  
+  document.getElementById('rpaLogS').classList.remove('hidden');
+  const log=document.getElementById('rpaLog');
+  let ok=0,er=0;
+  
+  for(let i=0;i<ids.length;i++){
+    const aId=parseInt(ids[i]);
+    const t=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    try{
+      await rpaPost('/external/integrations/thirdparty/projects/solicitation/forward',{assignmentId:aId,routingMotiveId,teamId,responsibleId,motive,incidentStatusId});
+      ok++;
+      log.innerHTML=`<div class="log-entry"><span style="font-size:0.5rem;color:var(--text-tertiary)">${t}</span><span class="log-entry-status ok">OK</span>#${aId} encaminhado</div>`+log.innerHTML;
+    }catch(e){
+      er++;
+      log.innerHTML=`<div class="log-entry"><span style="font-size:0.5rem;color:var(--text-tertiary)">${t}</span><span class="log-entry-status err">ERR</span>#${aId}: ${e.message}</div>`+log.innerHTML;
+    }
+    if(i<ids.length-1)await new Promise(r=>setTimeout(r,350));
+  }
+  showToast(`Concluído: ${ok} ok, ${er} erro(s).`,er?'error':'success');
+}
+</script>
+
+<!--
+  RESUMO DAS ALTERAÇÕES:
+  
+  1. NOVAS VARIÁVEIS (adicionar no topo):
+     let rpaClients=[], rpaSelectedClients=new Set();
+  
+  2. NOVO FLUXO:
+     Step 1: Auth (com scope 'syngw ' e console de API)
+     Step 2: GET /getclient → lista clientes → seleciona
+     Step 3: Carregar equipes/motivos/status
+     Step 4: Selecionar parâmetros + inserir IDs
+     Step 5: Selecionar solicitações e encaminhar
+  
+  3. CONSOLE DE API:
+     Toda requisição (GET/POST) é logada em tela no console escuro
+     com timestamp, método, URL, e response (status + dados)
+  
+  4. CSS NECESSÁRIO (já deve ter no seu arquivo, mas confirme):
+     .api-console { ... } (console escuro)
+     .client-search { ... } (campo de busca)
+     .sol-name { ... } (nome do cliente no item)
+     
+     Se não tiver, adicione:
+     .api-console{background:oklch(14% 0.02 200);border:1px solid oklch(25% 0.02 200);border-radius:var(--radius-md);padding:12px;margin-top:12px;max-height:180px;overflow-y:auto;font-family:'SF Mono','Fira Code',monospace;font-size:0.5625rem;line-height:1.7;color:oklch(70% 0.03 170)}
+     .api-console .req{color:oklch(70% 0.1 70)}.api-console .res-ok{color:oklch(70% 0.12 155)}.api-console .res-err{color:oklch(70% 0.15 25)}
+     .client-search{margin-bottom:10px}
+     .client-search input{width:100%;font-family:inherit;font-size:0.75rem;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);outline:none}
+     .client-search input:focus{border-color:var(--accent)}
+     .sol-name{color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+-->
