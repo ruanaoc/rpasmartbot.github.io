@@ -454,33 +454,51 @@ async function rpaAuth(){
 
 // ===== NOVO: Carregar Clientes =====
 async function rpaLoadClients(){
-  const url=gv('rpa-url').replace(/\/$/,'');
-  const page=document.getElementById('rpa-client-page').value||1;
-  const size=document.getElementById('rpa-client-size').value||50;
+  const url=gv('rpa-url').replace(/\/$/, '');
+  const page=Math.max(1, Number(document.getElementById('rpa-client-page').value || 1));
+  const size=Math.max(1, Number(document.getElementById('rpa-client-size').value || 50));
   const endpoint=`${url}:45715/external/integrations/thirdparty/getclient?page=${page}&pageSize=${size}`;
-  
-  rpaLog('req',`GET ${endpoint}`);
-  
+
+  rpaLog('req', `GET ${endpoint}`);
+
   try{
-    const r=await fetch(getProxy(endpoint),{headers:{'Authorization':`Bearer ${rpaToken}`,'Content-Type':'application/json'}});
+    const r=await fetch(getProxy(endpoint),{
+      headers:{
+        'Authorization':`Bearer ${rpaToken}`,
+        'Content-Type':'application/json'
+      }
+    });
+
     const text=await r.text();
-    
-    if(!r.ok){rpaLog('err',`${r.status} ${text}`);throw new Error(`${r.status}`);}
-    
+
+    if(!r.ok){
+      rpaLog('err', `${r.status} ${text}`);
+      throw new Error(`${r.status}`);
+    }
+
     const data=JSON.parse(text);
-    rpaClients=Array.isArray(data)?data:(data.data||data.result||data.items||data.content||[]);
-    rpaLog('ok',`200 OK | ${rpaClients.length} clientes retornados`);
-    
-    rpaSelectedClients=new Set();
+    const rawClients = Array.isArray(data)
+      ? data
+      : (data.data || data.result || data.items || data.content || data.clients || data.rows || data.records || data.results || []);
+
+    rpaClients = Array.isArray(rawClients) ? rawClients : [];
+
+    rpaLog('ok', `200 OK | ${rpaClients.length} clientes retornados`);
+
+    rpaSelectedClients = new Set();
     document.getElementById('rpaClientList').classList.remove('hidden');
-    document.getElementById('rpaClientCount').textContent=`${rpaClients.length} clientes`;
+    document.getElementById('rpaClientCount').textContent = `${rpaClients.length} clientes`;
     rpaRenderClients();
-    showToast(`${rpaClients.length} clientes carregados.`,'success');
-    
-    // Show next step
+
+    if(!rpaClients.length){
+      showToast(`Nenhum cliente encontrado na página ${page}.`, 'error');
+    }else{
+      showToast(`${rpaClients.length} clientes carregados.`, 'success');
+    }
+
     document.getElementById('rS3').classList.remove('hidden');
   }catch(e){
-    showToast('Erro: '+e.message,'error');
+    showToast('Erro: ' + e.message, 'error');
   }
 }
 
