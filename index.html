@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -656,7 +657,7 @@ function rpaOptionValue(obj){
 }
 
 function rpaOptionLabel(obj){
-  return String(rpaPick(obj,['name','teamName','motiveName','statusName','label','description'])||'').trim();
+  return String(rpaPick(obj,['title','name','teamName','motiveName','statusName','label','description','text'])||'').trim();
 }
 
 function rpaFillSelect(selectId,items){
