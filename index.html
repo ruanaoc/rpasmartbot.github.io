@@ -943,7 +943,7 @@ async function rpaExec(){
   const teamId=teamRaw?parseInt(teamRaw,10):0;
   const routingMotiveId=parseInt(document.getElementById('rpa-motive').value,10);
   const incidentStatusId=parseInt(document.getElementById('rpa-status').value,10);
-  const responsibleId=respRaw?parseInt(respRaw,10):0;
+  const responsibleId=respRaw?parseInt(respRaw,10):null;
   const motive=gv('rpa-obs');
   const ids=[...rpaSelected];
 
