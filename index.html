@@ -153,7 +153,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-subtle)}
 .field input.mono,.field textarea.mono{font-family:'SF Mono','Fira Code',monospace;font-size:0.6875rem}
 .field textarea{resize:vertical;min-height:70px;line-height:1.5}.field select{background:var(--surface);cursor:pointer}
-.field .hint{font-size:0.5rem;color:var(--text-tertiary);margin-top:1px}
+.field .hint{font-size:0.5rem;color:var(--text-tertiary);margin-top:1px}.field .hint.success{color:var(--success)}.field .hint.warning{color:var(--warning)}.field .hint.error{color:var(--danger)}.field input.invalid,.field select.invalid{border-color:var(--danger)!important;box-shadow:0 0 0 3px var(--danger-subtle)!important}.field input.valid{border-color:var(--success)!important;box-shadow:0 0 0 3px var(--success-subtle)!important}
 .actions-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .btn{font-family:inherit;font-size:0.6875rem;font-weight:500;padding:8px 14px;border-radius:var(--radius-sm);border:none;cursor:pointer;transition:all 150ms var(--ease-out);display:inline-flex;align-items:center;gap:5px}
 .btn-primary{background:var(--accent);color:white}.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:var(--shadow-md)}.btn-primary:disabled{opacity:0.4;pointer-events:none}
@@ -352,20 +352,20 @@ function renderRPA(){
     </div>
 
     <div class="card hidden" id="rS4"><div class="card-title"><span class="step">4</span> Carregamento dos Parâmetros</div>
-      <p style="font-size:0.6875rem;color:var(--text-secondary);margin-bottom:12px">Depois de selecionar as solicitações, o sistema carrega Status, Motivo e Equipes automaticamente usando o AssignmentID da seleção.</p>
+      <p style="font-size:0.6875rem;color:var(--text-secondary);margin-bottom:12px">Depois de selecionar as solicitações, o sistema carrega Status e Motivo automaticamente usando o AssignmentID da seleção.</p>
       <div class="rpa-status pending" id="rpaParamStatus" style="display:none"></div>
     </div>
 
     <div class="card hidden" id="rS5"><div class="card-title"><span class="step">5</span> Parâmetros do Encaminhamento</div>
       <div id="rpaParamHint" style="font-size:0.6875rem;color:var(--text-secondary);margin-bottom:12px">Selecione ao menos uma solicitação para carregar os parâmetros.</div>
       <div class="grid-3">
-        <div class="field"><label>Equipe</label><select id="rpa-team" disabled><option value="">Selecione...</option></select></div>
+        <div class="field"><label>Equipe (Team ID)</label><input type="text" id="rpa-team" class="mono" inputmode="numeric" placeholder="Informe o Team ID manualmente" disabled oninput="rpaHandleTeamInput()"><span class="hint" id="rpa-team-hint">Informe o Team ID ou deixe vazio para usar o Responsável ID.</span></div>
         <div class="field"><label>Motivo</label><select id="rpa-motive" disabled><option value="">Selecione...</option></select></div>
         <div class="field"><label>Status</label><select id="rpa-status" disabled><option value="">Selecione...</option></select></div>
       </div>
       <div class="grid-2" style="margin-top:12px">
         <div class="field"><label>Observação</label><input type="text" id="rpa-obs" placeholder="Texto do encaminhamento" disabled></div>
-        <div class="field"><label>Responsável ID</label><input type="text" id="rpa-resp" placeholder="Opcional (vazio = equipe)" disabled></div>
+        <div class="field"><label>Responsável ID</label><input type="text" id="rpa-resp" class="mono" inputmode="numeric" placeholder="Opcional (use quando não informar equipe)" disabled oninput="rpaHandleRespInput()"><span class="hint" id="rpa-resp-hint">Use este campo apenas se não informar o Team ID.</span></div>
       </div>
     </div>
 
@@ -674,6 +674,12 @@ function rpaSetForwardFieldsDisabled(disabled){
     const el=document.getElementById(id);
     if(el)el.disabled=disabled;
   });
+  if(disabled){
+    rpaSetFieldValidation(document.getElementById('rpa-team'),'neutral');
+    rpaSetFieldValidation(document.getElementById('rpa-resp'),'neutral');
+  }else{
+    rpaHandleTeamInput();
+  }
 }
 
 function rpaSetParamStatus(message,type='pending'){
@@ -692,19 +698,110 @@ function rpaSetParamStatus(message,type='pending'){
   }
 }
 
+function rpaSetFieldValidation(el,state){
+  if(!el)return;
+  el.classList.remove('invalid','valid');
+  if(state==='invalid')el.classList.add('invalid');
+  if(state==='valid')el.classList.add('valid');
+}
+
+function rpaSetHint(id,message,mode=''){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=message;
+  el.className='hint'+(mode?` ${mode}`:'');
+}
+
 function rpaResetForwardFields(message='Selecione ao menos uma solicitação para carregar os parâmetros.'){
   rpaTeams=[];
   rpaMotives=[];
   rpaStatuses=[];
-  ['rpa-team','rpa-motive','rpa-status'].forEach(id=>{
+  ['rpa-team','rpa-motive','rpa-status','rpa-obs','rpa-resp'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el){
-      el.innerHTML='<option value="">Selecione...</option>';
-      el.value='';
-    }
+    if(!el)return;
+    if(el.tagName==='SELECT')el.innerHTML='<option value="">Selecione...</option>';
+    el.value='';
   });
   rpaSetForwardFieldsDisabled(true);
   rpaSetParamStatus(message,'pending');
+  rpaSetHint('rpa-team-hint','Informe o Team ID ou deixe vazio para usar o Responsável ID.');
+  rpaSetHint('rpa-resp-hint','Use este campo apenas se não informar o Team ID.');
+}
+
+function rpaHandleRespInput(){
+  const respField=document.getElementById('rpa-resp');
+  if(!respField)return;
+  respField.value=respField.value.replace(/\D/g,'');
+  if(respField.disabled)return;
+  rpaHandleTeamInput();
+}
+
+function rpaHandleTeamInput(){
+  const teamField=document.getElementById('rpa-team');
+  const respField=document.getElementById('rpa-resp');
+  if(!teamField||!respField)return;
+  teamField.value=teamField.value.replace(/\D/g,'');
+  const teamValue=teamField.value.trim();
+  const respValue=(respField.value||'').replace(/\D/g,'');
+  respField.value=respValue;
+
+  if(teamField.disabled){
+    respField.disabled=true;
+    rpaSetHint('rpa-team-hint','Selecione uma solicitação para habilitar os parâmetros.');
+    rpaSetHint('rpa-resp-hint','Selecione uma solicitação para habilitar os parâmetros.');
+    rpaSetFieldValidation(teamField,'neutral');
+    rpaSetFieldValidation(respField,'neutral');
+    return;
+  }
+
+  if(teamValue){
+    respField.value='';
+    respField.disabled=true;
+    rpaSetFieldValidation(teamField,'valid');
+    rpaSetFieldValidation(respField,'neutral');
+    rpaSetHint('rpa-team-hint','Team ID informado. O encaminhamento usará este valor.','success');
+    rpaSetHint('rpa-resp-hint','Responsável bloqueado porque a equipe foi informada.','warning');
+    return;
+  }
+
+  respField.disabled=false;
+  rpaSetHint('rpa-team-hint','Informe o Team ID ou deixe vazio para usar o Responsável ID.',respValue?'':'warning');
+  if(respValue){
+    rpaSetFieldValidation(teamField,'neutral');
+    rpaSetFieldValidation(respField,'valid');
+    rpaSetHint('rpa-resp-hint','Responsável ID será usado porque o Team ID está vazio.','success');
+  }else{
+    rpaSetFieldValidation(teamField,'invalid');
+    rpaSetFieldValidation(respField,'neutral');
+    rpaSetHint('rpa-resp-hint','Preencha o Responsável ID se não quiser informar Team ID.','warning');
+  }
+}
+
+function rpaValidateRoutingFields(showToastOnError=false){
+  const teamField=document.getElementById('rpa-team');
+  const respField=document.getElementById('rpa-resp');
+  if(!teamField||!respField)return false;
+  const teamValue=teamField.value.trim();
+  const respValue=respField.value.trim();
+
+  if(teamValue){
+    rpaSetFieldValidation(teamField,'valid');
+    rpaSetFieldValidation(respField,'neutral');
+    return true;
+  }
+
+  if(respValue){
+    rpaSetFieldValidation(teamField,'neutral');
+    rpaSetFieldValidation(respField,'valid');
+    return true;
+  }
+
+  rpaSetFieldValidation(teamField,'invalid');
+  rpaSetFieldValidation(respField,'neutral');
+  rpaSetHint('rpa-team-hint','Informe o Team ID ou preencha o Responsável ID.','error');
+  rpaSetHint('rpa-resp-hint','Preencha o Responsável ID se não quiser informar Team ID.','warning');
+  if(showToastOnError)showToast('Informe o Team ID ou o Responsável ID.','error');
+  return false;
 }
 
 function rpaSelectedAssignmentsData(){
@@ -732,9 +829,9 @@ async function rpaSyncForwardParams(force=false){
   }
 
   const selectionKey=selectedItems.map(item=>String(item.__assignmentId || rpaAssignmentId(item))).sort().join('|');
-  if(!force && rpaForwardContext.assignmentId===assignmentId && rpaForwardContext.lastSelectionKey===selectionKey && rpaTeams.length && rpaMotives.length && rpaStatuses.length){
+  if(!force && rpaForwardContext.assignmentId===assignmentId && rpaForwardContext.lastSelectionKey===selectionKey && rpaMotives.length && rpaStatuses.length){
     rpaSetForwardFieldsDisabled(false);
-    rpaSetParamStatus(selectedItems.length>1?`Parâmetros carregados com base na solicitação #${assignmentId}. Revise antes de encaminhar o lote.`:`Parâmetros carregados para a solicitação #${assignmentId}.`,'ok');
+    rpaSetParamStatus(selectedItems.length>1?`Parâmetros carregados com base na solicitação #${assignmentId}. Informe o Team ID manualmente antes de encaminhar.`:`Parâmetros carregados para a solicitação #${assignmentId}. Informe o Team ID manualmente antes de encaminhar.`,'ok');
     return;
   }
 
@@ -744,8 +841,7 @@ async function rpaSyncForwardParams(force=false){
   rpaResetForwardFields(`Carregando parâmetros da solicitação #${assignmentId}...`);
 
   try{
-    const [teams,motives,statuses]=await Promise.all([
-      rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/teams',{assignmentId}),
+    const [motives,statuses]=await Promise.all([
       rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/motives'),
       rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/incident-status')
     ]);
@@ -755,15 +851,13 @@ async function rpaSyncForwardParams(force=false){
     const currentAssignmentId=currentAssignment?String(currentAssignment.__assignmentId || rpaAssignmentId(currentAssignment)).trim():'';
     if(currentAssignmentId!==assignmentId)return;
 
-    rpaTeams=teams;
     rpaMotives=motives;
     rpaStatuses=statuses;
 
-    rpaFillSelect('rpa-team',rpaTeams);
     rpaFillSelect('rpa-motive',rpaMotives);
     rpaFillSelect('rpa-status',rpaStatuses);
     rpaSetForwardFieldsDisabled(false);
-    rpaSetParamStatus(currentSelected.length>1?`Parâmetros carregados com base na solicitação #${assignmentId}. Revise antes de encaminhar o lote.`:`Parâmetros carregados para a solicitação #${assignmentId}.`,'ok');
+    rpaSetParamStatus(currentSelected.length>1?`Parâmetros carregados com base na solicitação #${assignmentId}. Informe o Team ID manualmente antes de encaminhar.`:`Parâmetros carregados para a solicitação #${assignmentId}. Informe o Team ID manualmente antes de encaminhar.`,'ok');
   }catch(e){
     const message=e.message||'Não foi possível carregar os parâmetros de encaminhamento.';
     rpaResetForwardFields(message);
@@ -821,35 +915,46 @@ function rpaConfirm(){
   const team=document.getElementById('rpa-team');
   const motive=document.getElementById('rpa-motive');
   const status=document.getElementById('rpa-status');
-  if(!team.value||!motive.value||!status.value){showToast('Selecione equipe, motivo e status.','error');return;}
+  const teamRaw=team.value.trim();
+  const respRaw=gv('rpa-resp');
+  if(!motive.value||!status.value){showToast('Selecione motivo e status.','error');return;}
   if(!rpaSelected.size){showToast('Selecione ao menos uma solicitação.','error');return;}
+  if(!teamRaw && !respRaw){rpaValidateRoutingFields(true);return;}
+  if(!/^\d*$/.test(teamRaw)){showToast('O Team ID deve ser numérico.','error');return;}
+  if(!/^\d*$/.test(respRaw)){showToast('O Responsável ID deve ser numérico.','error');return;}
   document.getElementById('modalTitle').textContent='Confirmar Encaminhamento';
   document.getElementById('modalDesc').textContent='Revise antes de executar:';
   document.getElementById('modalDetail').innerHTML=`
     <div class="modal-detail-row"><span class="modal-detail-label">Clientes selecionados</span><span class="modal-detail-value">${rpaSelectedClients.size}</span></div>
     <div class="modal-detail-row"><span class="modal-detail-label">Solicitações</span><span class="modal-detail-value">${rpaSelected.size}</span></div>
-    <div class="modal-detail-row"><span class="modal-detail-label">Equipe</span><span class="modal-detail-value">${esc(team.options[team.selectedIndex].text)}</span></div>
+    <div class="modal-detail-row"><span class="modal-detail-label">Team ID</span><span class="modal-detail-value">${teamRaw||'(não informado)'}</span></div>
     <div class="modal-detail-row"><span class="modal-detail-label">Motivo</span><span class="modal-detail-value">${esc(motive.options[motive.selectedIndex].text)}</span></div>
     <div class="modal-detail-row"><span class="modal-detail-label">Status</span><span class="modal-detail-value">${esc(status.options[status.selectedIndex].text)}</span></div>
     <div class="modal-detail-row"><span class="modal-detail-label">Observação</span><span class="modal-detail-value">${esc(gv('rpa-obs'))||'(vazio)'}</span></div>
-    <div class="modal-detail-row"><span class="modal-detail-label">Responsável</span><span class="modal-detail-value">${gv('rpa-resp')||'Nenhum (equipe)'}</span></div>`;
+    <div class="modal-detail-row"><span class="modal-detail-label">Responsável ID</span><span class="modal-detail-value">${respRaw||'Nenhum'}</span></div>`;
   document.getElementById('modalActions').innerHTML=`<button class="btn btn-ghost" onclick="document.getElementById('confirmModal').classList.remove('active')">Cancelar</button><button class="btn btn-success btn-lg" onclick="rpaExec()">Confirmar</button>`;
   document.getElementById('confirmModal').classList.add('active');
 }
 
 async function rpaExec(){
   document.getElementById('confirmModal').classList.remove('active');
-  const teamId=parseInt(document.getElementById('rpa-team').value);
-  const routingMotiveId=parseInt(document.getElementById('rpa-motive').value);
-  const incidentStatusId=parseInt(document.getElementById('rpa-status').value);
-  const responsibleId=parseInt(gv('rpa-resp'))||0;
+  const teamRaw=document.getElementById('rpa-team').value.trim();
+  const respRaw=gv('rpa-resp');
+  const teamId=teamRaw?parseInt(teamRaw,10):0;
+  const routingMotiveId=parseInt(document.getElementById('rpa-motive').value,10);
+  const incidentStatusId=parseInt(document.getElementById('rpa-status').value,10);
+  const responsibleId=respRaw?parseInt(respRaw,10):0;
   const motive=gv('rpa-obs');
   const ids=[...rpaSelected];
+
+  if(!routingMotiveId||!incidentStatusId){showToast('Selecione motivo e status.','error');return;}
+  if(!rpaValidateRoutingFields(true))return;
+
   document.getElementById('rpaLogS').classList.remove('hidden');
   const log=document.getElementById('rpaLog');
   let ok=0,er=0;
   for(let i=0;i<ids.length;i++){
-    const assignmentId=parseInt(ids[i]);
+    const assignmentId=parseInt(ids[i],10);
     const time=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     try{
       await rpaPost('/external/integrations/thirdparty/projects/solicitation/forward',{assignmentId,routingMotiveId,teamId,responsibleId,motive,incidentStatusId});
