@@ -250,7 +250,7 @@ function buildResolvedEmailHtml(inc){const rd=new Date(inc.resolved_at).toLocale
 
 // === STATE & AUTH ===
 let currentUser=null,formEmails=[],formImage=null,lastDetailFrom='active';
-let rpaToken=null,rpaTeams=[],rpaMotives=[],rpaStatuses=[],rpaAssignments=[],rpaSelected=new Set(),rpaClients=[],rpaSelectedClients=new Set(),rpaAssignmentsData=[];
+let rpaToken=null,rpaTeams=[],rpaMotives=[],rpaStatuses=[],rpaAssignments=[],rpaSelected=new Set(),rpaClients=[],rpaSelectedClients=new Set(),rpaAssignmentsData=[],rpaForwardContext={assignmentId:'',loading:false,lastSelectionKey:''};
 async function hashPw(p){const e=new TextEncoder(),d=e.encode(p+'rbot_salt'),h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
 function cleanCPF(c){return c.replace(/\D/g,'');}
 function maskCPF(i){let v=i.value.replace(/\D/g,'').slice(0,11);if(v.length>9)v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');else if(v.length>6)v=v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');else if(v.length>3)v=v.replace(/(\d{3})(\d{1,3})/,'$1.$2');i.value=v;}
@@ -350,24 +350,25 @@ function renderRPA(){
       </div>
     </div>
 
-    <div class="card hidden" id="rS4"><div class="card-title"><span class="step">4</span> Equipes, Motivos e Status</div>
-      <p style="font-size:0.6875rem;color:var(--text-secondary);margin-bottom:12px">Carregue os dados necessários para o encaminhamento.</p>
-      <button class="btn btn-primary" onclick="rpaLoad()"><i data-lucide="download" style="width:13px;height:13px"></i>Carregar Dados de Encaminhamento</button>
+    <div class="card hidden" id="rS4"><div class="card-title"><span class="step">4</span> Carregamento dos Parâmetros</div>
+      <p style="font-size:0.6875rem;color:var(--text-secondary);margin-bottom:12px">Depois de selecionar as solicitações, o sistema carrega Status, Motivo e Equipes automaticamente usando o AssignmentID da seleção.</p>
+      <div class="rpa-status pending" id="rpaParamStatus" style="display:none"></div>
     </div>
 
     <div class="card hidden" id="rS5"><div class="card-title"><span class="step">5</span> Parâmetros do Encaminhamento</div>
+      <div id="rpaParamHint" style="font-size:0.6875rem;color:var(--text-secondary);margin-bottom:12px">Selecione ao menos uma solicitação para carregar os parâmetros.</div>
       <div class="grid-3">
-        <div class="field"><label>Equipe</label><select id="rpa-team"><option value="">Selecione...</option></select></div>
-        <div class="field"><label>Motivo</label><select id="rpa-motive"><option value="">Selecione...</option></select></div>
-        <div class="field"><label>Status</label><select id="rpa-status"><option value="">Selecione...</option></select></div>
+        <div class="field"><label>Equipe</label><select id="rpa-team" disabled><option value="">Selecione...</option></select></div>
+        <div class="field"><label>Motivo</label><select id="rpa-motive" disabled><option value="">Selecione...</option></select></div>
+        <div class="field"><label>Status</label><select id="rpa-status" disabled><option value="">Selecione...</option></select></div>
       </div>
       <div class="grid-2" style="margin-top:12px">
-        <div class="field"><label>Observação</label><input type="text" id="rpa-obs" placeholder="Texto do encaminhamento"></div>
-        <div class="field"><label>Responsável ID</label><input type="text" id="rpa-resp" placeholder="Opcional (vazio = equipe)"></div>
+        <div class="field"><label>Observação</label><input type="text" id="rpa-obs" placeholder="Texto do encaminhamento" disabled></div>
+        <div class="field"><label>Responsável ID</label><input type="text" id="rpa-resp" placeholder="Opcional (vazio = equipe)" disabled></div>
       </div>
     </div>
 
-    <div class="card hidden" id="rS6"><div class="card-title"><span class="step">6</span> Selecionar e Encaminhar</div>
+    <div class="card hidden" id="rS6"><div class="card-title"><span class="step">6</span> Selecionar e Encaminhar</div><div class="card-title"><span class="step">6</span> Selecionar e Encaminhar</div>
       <div style="display:flex;justify-content:space-between;margin-bottom:8px;gap:10px;flex-wrap:wrap">
         <span style="font-size:0.625rem;font-weight:700;color:var(--accent)" id="rpaC">0 solicitações</span>
         <label class="select-all-label"><input type="checkbox" id="rpaSA" onchange="rpaToggleAll()"> Todas</label>
@@ -602,11 +603,17 @@ async function rpaLoadAssignmentsByClients(){
   rpaAssignmentsData=merged;
   rpaAssignments=merged.map(item=>String(item.__assignmentId || rpaAssignmentId(item))).filter(Boolean);
   rpaSelected=new Set(rpaAssignments);
+  rpaTeams=[];
+  rpaMotives=[];
+  rpaStatuses=[];
+  rpaForwardContext={assignmentId:'',loading:false,lastSelectionKey:''};
   rpaRender();
   rpaBar();
   document.getElementById('rS4').classList.remove('hidden');
+  document.getElementById('rS5').classList.remove('hidden');
   document.getElementById('rS6').classList.remove('hidden');
-  if(rpaTeams.length&&rpaMotives.length&&rpaStatuses.length)document.getElementById('rS5').classList.remove('hidden');
+  rpaResetForwardFields();
+  if(rpaAssignments.length)await rpaSyncForwardParams();
   showToast(rpaAssignments.length?`${rpaAssignments.length} solicitações carregadas.`:'Nenhuma solicitação encontrada para os clientes selecionados.',rpaAssignments.length?'success':'error');
 }
 
@@ -620,6 +627,15 @@ async function rpaGet(path,params={}){
   if(!r.ok){rpaLog('err',`${r.status} ${text}`);throw new Error(`${r.status}`);}
   const data=JSON.parse(text);
   const items=rpaExtractArray(data);
+  const logicalMessage = (()=>{
+    if(data && typeof data==='object' && !Array.isArray(data) && typeof data.message==='string' && !items.length)return data.message;
+    if(Array.isArray(data) && data.length===1 && data[0] && typeof data[0]==='object' && typeof data[0].message==='string')return data[0].message;
+    return '';
+  })();
+  if(logicalMessage){
+    rpaLog('err',`200 ${logicalMessage}`);
+    throw new Error(logicalMessage);
+  }
   rpaLog('ok',`200 OK | ${items.length} item(ns)`);
   return items;
 }
@@ -635,24 +651,129 @@ async function rpaPost(path,body){
   return JSON.parse(text);
 }
 
-async function rpaLoad(){
+function rpaOptionValue(obj){
+  return String(rpaPick(obj,['id','teamId','motiveId','statusId','value'])||'').trim();
+}
+
+function rpaOptionLabel(obj){
+  return String(rpaPick(obj,['name','teamName','motiveName','statusName','label','description'])||'').trim();
+}
+
+function rpaFillSelect(selectId,items){
+  const select=document.getElementById(selectId);
+  if(!select)return;
+  const options=(Array.isArray(items)?items:[])
+    .map(item=>({value:rpaOptionValue(item),label:rpaOptionLabel(item)}))
+    .filter(option=>option.value&&option.label);
+  select.innerHTML='<option value="">Selecione...</option>'+options.map(option=>`<option value="${esc(option.value)}">${esc(option.label)}</option>`).join('');
+}
+
+function rpaSetForwardFieldsDisabled(disabled){
+  ['rpa-team','rpa-motive','rpa-status','rpa-obs','rpa-resp'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.disabled=disabled;
+  });
+}
+
+function rpaSetParamStatus(message,type='pending'){
+  const hint=document.getElementById('rpaParamHint');
+  const status=document.getElementById('rpaParamStatus');
+  if(hint)hint.textContent=message||'';
+  if(status){
+    if(message){
+      status.style.display='';
+      status.className='rpa-status '+type;
+      status.textContent=message;
+    }else{
+      status.style.display='none';
+      status.textContent='';
+    }
+  }
+}
+
+function rpaResetForwardFields(message='Selecione ao menos uma solicitação para carregar os parâmetros.'){
+  rpaTeams=[];
+  rpaMotives=[];
+  rpaStatuses=[];
+  ['rpa-team','rpa-motive','rpa-status'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.innerHTML='<option value="">Selecione...</option>';
+      el.value='';
+    }
+  });
+  rpaSetForwardFieldsDisabled(true);
+  rpaSetParamStatus(message,'pending');
+}
+
+function rpaSelectedAssignmentsData(){
+  return rpaAssignmentsData.filter(item=>rpaSelected.has(String(item.__assignmentId || rpaAssignmentId(item))));
+}
+
+async function rpaSyncForwardParams(force=false){
+  const selectedItems=rpaSelectedAssignmentsData();
+  if(!selectedItems.length){
+    rpaForwardContext.assignmentId='';
+    rpaForwardContext.lastSelectionKey='';
+    rpaResetForwardFields('Selecione ao menos uma solicitação para carregar os parâmetros.');
+    return;
+  }
+
+  const firstWithAssignment=selectedItems.find(item=>String(item.__assignmentId || rpaAssignmentId(item)).trim());
+  const assignmentId=firstWithAssignment?String(firstWithAssignment.__assignmentId || rpaAssignmentId(firstWithAssignment)).trim():'';
+
+  if(!assignmentId){
+    rpaForwardContext.assignmentId='';
+    rpaForwardContext.lastSelectionKey='';
+    rpaResetForwardFields('A solicitação selecionada não possui AssignmentID válido.');
+    document.getElementById('rpaParamStatus').className='rpa-status err';
+    return;
+  }
+
+  const selectionKey=selectedItems.map(item=>String(item.__assignmentId || rpaAssignmentId(item))).sort().join('|');
+  if(!force && rpaForwardContext.assignmentId===assignmentId && rpaForwardContext.lastSelectionKey===selectionKey && rpaTeams.length && rpaMotives.length && rpaStatuses.length){
+    rpaSetForwardFieldsDisabled(false);
+    rpaSetParamStatus(selectedItems.length>1?`Parâmetros carregados com base na solicitação #${assignmentId}. Revise antes de encaminhar o lote.`:`Parâmetros carregados para a solicitação #${assignmentId}.`,'ok');
+    return;
+  }
+
+  rpaForwardContext.assignmentId=assignmentId;
+  rpaForwardContext.lastSelectionKey=selectionKey;
+  rpaForwardContext.loading=true;
+  rpaResetForwardFields(`Carregando parâmetros da solicitação #${assignmentId}...`);
+
   try{
     const [teams,motives,statuses]=await Promise.all([
-      rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/teams',{assignmentId:0}),
+      rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/teams',{assignmentId}),
       rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/motives'),
       rpaGet('/external/integrations/thirdparty/projects/solicitation/forward/incident-status')
     ]);
-    rpaTeams=teams;rpaMotives=motives;rpaStatuses=statuses;
-    const id=obj=>rpaPick(obj,['id','teamId','motiveId','statusId','value']) || JSON.stringify(obj);
-    const name=obj=>rpaPick(obj,['name','teamName','motiveName','statusName','label','description']) || JSON.stringify(obj);
-    document.getElementById('rpa-team').innerHTML='<option value="">Selecione...</option>'+rpaTeams.map(item=>`<option value="${id(item)}">${esc(name(item))}</option>`).join('');
-    document.getElementById('rpa-motive').innerHTML='<option value="">Selecione...</option>'+rpaMotives.map(item=>`<option value="${id(item)}">${esc(name(item))}</option>`).join('');
-    document.getElementById('rpa-status').innerHTML='<option value="">Selecione...</option>'+rpaStatuses.map(item=>`<option value="${id(item)}">${esc(name(item))}</option>`).join('');
-    document.getElementById('rS5').classList.remove('hidden');
-    showToast(`${rpaTeams.length} equipes, ${rpaMotives.length} motivos, ${rpaStatuses.length} status.`,'success');
+
+    const currentSelected=rpaSelectedAssignmentsData();
+    const currentAssignment=currentSelected.find(item=>String(item.__assignmentId || rpaAssignmentId(item)).trim());
+    const currentAssignmentId=currentAssignment?String(currentAssignment.__assignmentId || rpaAssignmentId(currentAssignment)).trim():'';
+    if(currentAssignmentId!==assignmentId)return;
+
+    rpaTeams=teams;
+    rpaMotives=motives;
+    rpaStatuses=statuses;
+
+    rpaFillSelect('rpa-team',rpaTeams);
+    rpaFillSelect('rpa-motive',rpaMotives);
+    rpaFillSelect('rpa-status',rpaStatuses);
+    rpaSetForwardFieldsDisabled(false);
+    rpaSetParamStatus(currentSelected.length>1?`Parâmetros carregados com base na solicitação #${assignmentId}. Revise antes de encaminhar o lote.`:`Parâmetros carregados para a solicitação #${assignmentId}.`,'ok');
   }catch(e){
-    showToast('Erro ao carregar: '+e.message,'error');
+    const message=e.message||'Não foi possível carregar os parâmetros de encaminhamento.';
+    rpaResetForwardFields(message);
+    document.getElementById('rpaParamStatus').className='rpa-status err';
+  }finally{
+    rpaForwardContext.loading=false;
   }
+}
+
+async function rpaLoad(){
+  return rpaSyncForwardParams(true);
 }
 
 function rpaRender(){
@@ -677,6 +798,7 @@ function rpaT(id){
   else rpaSelected.add(id);
   rpaRender();
   rpaBar();
+  rpaSyncForwardParams();
 }
 
 function rpaToggleAll(){
@@ -685,6 +807,7 @@ function rpaToggleAll(){
   else rpaSelected.clear();
   rpaRender();
   rpaBar();
+  rpaSyncForwardParams();
 }
 
 function rpaBar(){
