@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -93,6 +94,7 @@
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:oklch(96% 0.004 200);--surface:oklch(99.5% 0.002 200);--text-primary:oklch(15% 0.012 200);--text-secondary:oklch(40% 0.008 200);--text-tertiary:oklch(56% 0.006 200);--border:oklch(88% 0.006 200);--border-hover:oklch(78% 0.01 200);--accent:oklch(55% 0.18 170);--accent-hover:oklch(48% 0.18 170);--accent-subtle:oklch(93% 0.05 170);--danger:oklch(52% 0.2 25);--danger-subtle:oklch(94% 0.03 25);--danger-bg:oklch(45% 0.18 25);--success:oklch(50% 0.15 155);--success-subtle:oklch(93% 0.04 155);--warning:oklch(58% 0.15 70);--warning-subtle:oklch(94% 0.04 70);--radius-sm:6px;--radius-md:10px;--radius-lg:14px;--shadow-sm:0 1px 2px oklch(0% 0 0/0.04);--shadow-md:0 4px 12px oklch(0% 0 0/0.07);--shadow-lg:0 8px 24px oklch(0% 0 0/0.12);--ease-out:cubic-bezier(0.22,1,0.36,1)}
@@ -229,7 +231,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 </head>
 <body>
 <div class="login-wrapper" id="loginWrapper"><div class="login-card"><div class="login-brand"><div class="login-brand-icon"><i data-lucide="cpu"></i></div><h1>RPASmartBot</h1><p>Intelligent Operations Platform</p></div><div class="login-tabs"><button class="login-tab active" onclick="switchTab('login')">Entrar</button><button class="login-tab" onclick="switchTab('register')">Cadastrar</button></div><div class="login-msg error" id="loginErr"></div><div class="login-msg info" id="loginInfo"></div><div id="loginForm"><div class="login-field"><label>Email ou CPF</label><input type="text" id="login-id"></div><div class="login-field"><label>Senha</label><input type="password" id="login-pass" onkeydown="if(event.key==='Enter')doLogin()"></div><button class="login-btn" onclick="doLogin()">Entrar</button></div><div id="registerForm" style="display:none;"><div class="login-field"><label>Nome</label><input type="text" id="reg-name"></div><div class="login-field"><label>Email</label><input type="email" id="reg-email"></div><div class="login-field"><label>CPF</label><input type="text" id="reg-cpf" oninput="maskCPF(this)"></div><div class="login-field"><label>Senha</label><input type="password" id="reg-pass"></div><div class="login-field"><label>Confirmar</label><input type="password" id="reg-pass2" onkeydown="if(event.key==='Enter')doRegister()"></div><button class="login-btn" onclick="doRegister()">Solicitar Acesso</button></div></div></div>
-<div class="shell" id="appShell"><nav class="sidebar" id="sidebar"><div class="sidebar-brand"><div class="sidebar-brand-logo"><i data-lucide="cpu"></i></div><div class="sidebar-brand-text"><div class="t">RPASmartBot</div><div class="s">Smart Ops</div></div></div><div class="nav-label">Incidentes</div><button class="nav-item active" data-page="active" onclick="nav('active')"><i data-lucide="alert-triangle"></i>Ativos</button><button class="nav-item" data-page="resolved" onclick="nav('resolved')"><i data-lucide="check-circle"></i>Resolvidos</button><button class="nav-item" data-page="create" onclick="nav('create')"><i data-lucide="plus-circle"></i>Registrar</button><div class="nav-divider"></div><div class="nav-label">Automação</div><button class="nav-item" data-page="rpa" onclick="nav('rpa')"><i data-lucide="route"></i>Encaminhamento</button><div class="nav-divider"></div><div class="nav-label">Sistema</div><button class="nav-item" data-page="logs" onclick="nav('logs')"><i data-lucide="file-text"></i>Logs</button><button class="nav-item hidden" data-page="users" id="navUsers" onclick="nav('users')"><i data-lucide="users"></i>Usuários</button><button class="nav-item hidden" data-page="settings" id="navSettings" onclick="nav('settings')"><i data-lucide="settings"></i>Configurações</button><div class="sidebar-footer"><div class="user-info"><span class="user-avatar" id="userAvatar"></span><span id="userName"></span><span class="user-role-badge" id="userRoleBadge"></span></div><div class="auth-indicator"><span class="auth-dot off" id="gmailDot"></span><span id="gmailStatusLabel">Gmail off</span></div><button class="logout-btn" onclick="doLogout()">Sair</button></div></nav><div class="main-content"><div class="mobile-header" style="display:none"><button onclick="document.getElementById('sidebar').classList.toggle('open')" style="background:none;border:none;cursor:pointer"><i data-lucide="menu" style="width:20px;height:20px"></i></button><span style="font-weight:700;font-size:0.8125rem">RPASmartBot</span></div><div class="page active" id="page-active"></div><div class="page" id="page-resolved"></div><div class="page" id="page-create"></div><div class="page" id="page-detail"></div><div class="page" id="page-rpa"></div><div class="page" id="page-logs"></div><div class="page" id="page-users"></div><div class="page" id="page-settings"></div></div></div>
+<div class="shell" id="appShell"><nav class="sidebar" id="sidebar"><div class="sidebar-brand"><div class="sidebar-brand-logo"><i data-lucide="cpu"></i></div><div class="sidebar-brand-text"><div class="t">RPASmartBot</div><div class="s">Smart Ops</div></div></div><div class="nav-label">Incidentes</div><button class="nav-item active" data-page="active" onclick="nav('active')"><i data-lucide="alert-triangle"></i>Ativos</button><button class="nav-item" data-page="resolved" onclick="nav('resolved')"><i data-lucide="check-circle"></i>Resolvidos</button><button class="nav-item" data-page="create" onclick="nav('create')"><i data-lucide="plus-circle"></i>Registrar</button><div class="nav-divider"></div><div class="nav-label">Automação</div><button class="nav-item" data-page="rpa" onclick="nav('rpa')"><i data-lucide="route"></i>Encaminhamento</button><button class="nav-item" data-page="rpa-import" onclick="nav('rpa-import')"><i data-lucide="file-spreadsheet"></i>Enc. por planilha</button><div class="nav-divider"></div><div class="nav-label">Sistema</div><button class="nav-item" data-page="logs" onclick="nav('logs')"><i data-lucide="file-text"></i>Logs</button><button class="nav-item hidden" data-page="users" id="navUsers" onclick="nav('users')"><i data-lucide="users"></i>Usuários</button><button class="nav-item hidden" data-page="settings" id="navSettings" onclick="nav('settings')"><i data-lucide="settings"></i>Configurações</button><div class="sidebar-footer"><div class="user-info"><span class="user-avatar" id="userAvatar"></span><span id="userName"></span><span class="user-role-badge" id="userRoleBadge"></span></div><div class="auth-indicator"><span class="auth-dot off" id="gmailDot"></span><span id="gmailStatusLabel">Gmail off</span></div><button class="logout-btn" onclick="doLogout()">Sair</button></div></nav><div class="main-content"><div class="mobile-header" style="display:none"><button onclick="document.getElementById('sidebar').classList.toggle('open')" style="background:none;border:none;cursor:pointer"><i data-lucide="menu" style="width:20px;height:20px"></i></button><span style="font-weight:700;font-size:0.8125rem">RPASmartBot</span></div><div class="page active" id="page-active"></div><div class="page" id="page-resolved"></div><div class="page" id="page-create"></div><div class="page" id="page-detail"></div><div class="page" id="page-rpa"></div><div class="page" id="page-rpa-import"></div><div class="page" id="page-logs"></div><div class="page" id="page-users"></div><div class="page" id="page-settings"></div></div></div>
 <div class="modal-overlay" id="confirmModal"><div class="modal-card"><div class="modal-title" id="modalTitle"></div><div class="modal-desc" id="modalDesc"></div><div class="modal-detail" id="modalDetail"></div><div class="modal-actions" id="modalActions"></div></div></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -251,7 +253,7 @@ function buildResolvedEmailHtml(inc){const rd=new Date(inc.resolved_at).toLocale
 
 // === STATE & AUTH ===
 let currentUser=null,formEmails=[],formImage=null,lastDetailFrom='active';
-let rpaToken=null,rpaTeams=[],rpaMotives=[],rpaStatuses=[],rpaAssignments=[],rpaSelected=new Set(),rpaClients=[],rpaSelectedClients=new Set(),rpaAssignmentsData=[],rpaForwardContext={assignmentId:'',loading:false,lastSelectionKey:''};
+let rpaToken=null,rpaTeams=[],rpaMotives=[],rpaStatuses=[],rpaAssignments=[],rpaSelected=new Set(),rpaClients=[],rpaSelectedClients=new Set(),rpaAssignmentsData=[],rpaForwardContext={assignmentId:'',loading:false,lastSelectionKey:''};let rpaImportRows=[],rpaImportSelected=new Set(),rpaImportMotives=[],rpaImportStatuses=[];
 async function hashPw(p){const e=new TextEncoder(),d=e.encode(p+'rbot_salt'),h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
 function cleanCPF(c){return c.replace(/\D/g,'');}
 function maskCPF(i){let v=i.value.replace(/\D/g,'').slice(0,11);if(v.length>9)v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');else if(v.length>6)v=v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');else if(v.length>3)v=v.replace(/(\d{3})(\d{1,3})/,'$1.$2');i.value=v;}
@@ -270,7 +272,7 @@ function enterApp(){document.getElementById('loginWrapper').style.display='none'
 async function checkSession(){const saved=localStorage.getItem('rbot_user');if(!saved)return;const u=JSON.parse(saved);const{data}=await sb.from('users').select('*').eq('id',u.id).eq('status','approved').single();if(data){currentUser=data;localStorage.setItem('rbot_user',JSON.stringify(data));enterApp();}else localStorage.removeItem('rbot_user');}
 
 // === NAV ===
-function nav(page,data){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');document.querySelectorAll('.nav-item[data-page]').forEach(n=>n.classList.remove('active'));const nb=document.querySelector(`.nav-item[data-page="${page}"]`);if(nb)nb.classList.add('active');if(page==='active')renderActive();if(page==='resolved')renderResolved();if(page==='create')renderCreate();if(page==='detail'&&data)renderDetail(data);if(page==='rpa')renderRPA();if(page==='logs')renderLogs();if(page==='users')renderUsers();if(page==='settings')renderSettings();document.getElementById('sidebar').classList.remove('open');document.querySelector('.main-content').scrollTop=0;}
+function nav(page,data){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');document.querySelectorAll('.nav-item[data-page]').forEach(n=>n.classList.remove('active'));const nb=document.querySelector(`.nav-item[data-page="${page}"]`);if(nb)nb.classList.add('active');if(page==='active')renderActive();if(page==='resolved')renderResolved();if(page==='create')renderCreate();if(page==='detail'&&data)renderDetail(data);if(page==='rpa')renderRPA();if(page==='rpa-import')renderRPAImport();if(page==='logs')renderLogs();if(page==='users')renderUsers();if(page==='settings')renderSettings();document.getElementById('sidebar').classList.remove('open');document.querySelector('.main-content').scrollTop=0;}
 
 // === INCIDENTS ===
 async function renderActive(){const{data:all}=await sb.from('incidents').select('*').order('created_at',{ascending:false});const a=(all||[]).filter(i=>i.status==='active');document.getElementById('page-active').innerHTML=`<div class="page-header"><div><h1 class="page-title">Ativos</h1></div><button class="btn btn-primary" onclick="nav('create')"><i data-lucide="plus" style="width:13px;height:13px"></i>Novo</button></div><div class="stats-row"><div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value danger">${a.length}</div></div><div class="stat-card"><div class="stat-label">Total</div><div class="stat-value accent">${(all||[]).length}</div></div></div>${a.length?`<div class="cards-grid">${a.map(i=>cCard(i,'active')).join('')}</div>`:'<div class="empty-state">Nenhum incidente ativo.</div>'}`;lucide.createIcons();}
@@ -969,6 +971,209 @@ async function rpaExec(){
   showToast(`Concluído: ${ok} ok, ${er} erro(s).`,er?'error':'success');
 }
 
+
+
+function rpaImportProxy(target){
+  const proxy=gv('rpi-proxy');
+  return proxy?proxy.replace(/\/$/,'')+'/'+target:target;
+}
+
+function rpaImportLog(type,msg){
+  const con=document.getElementById('rpiConsole');
+  if(!con)return;
+  con.classList.remove('hidden');
+  const time=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const cls=type==='req'?'req':type==='ok'?'res-ok':'res-err';
+  con.innerHTML+=`<div class="${cls}">[${time}] ${msg}</div>`;
+  con.scrollTop=con.scrollHeight;
+}
+
+function rpaImportSaveCfg(){
+  localStorage.setItem('rbot_rpa_cfg',JSON.stringify({proxy:gv('rpi-proxy'),url:gv('rpi-url'),cid:gv('rpi-cid'),cs:gv('rpi-cs'),syn:gv('rpi-syn')}));
+  showToast('Configuração salva.','success');
+}
+
+async function rpaImportAuth(){
+  const url=gv('rpi-url').replace(/\/$/,''),cid=gv('rpi-cid'),cs=gv('rpi-cs'),syn=gv('rpi-syn');
+  if(!url||!cid||!cs||!syn){showToast('Preencha todos os campos.','error');return;}
+  const st=document.getElementById('rpiSt');
+  st.style.display='';st.className='rpa-status pending';st.textContent='Autenticando...';
+  const endpoint=`${url}:45700/connect/token`;
+  rpaImportLog('req',`POST ${endpoint}`);
+  try{
+    const body=`grant_type=${encodeURIComponent('client_credentials')}&scope=${encodeURIComponent('syngw ')}&client_id=${encodeURIComponent(cid)}&client_secret=${encodeURIComponent(cs)}&syndata=${encodeURIComponent(syn)}`;
+    const r=await fetch(rpaImportProxy(endpoint),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+    const resp=await r.text();
+    if(!r.ok){rpaImportLog('err',`${r.status} ${resp}`);throw new Error(`${r.status}: ${resp}`);}
+    const data=JSON.parse(resp);
+    if(!data.access_token)throw new Error('Token não retornado.');
+    rpaToken=data.access_token;
+    rpaImportLog('ok',`200 OK | token gerado | expires_in: ${data.expires_in}`);
+    st.className='rpa-status ok';
+    st.textContent=`Token OK! Expira em ${Math.floor((data.expires_in||3600)/60)}min`;
+    document.getElementById('rpiS2').classList.remove('hidden');
+    showToast('Autenticado!','success');
+  }catch(e){
+    st.className='rpa-status err';
+    st.textContent=e.message;
+    showToast('Erro: '+e.message,'error');
+  }
+}
+
+function rpaImportDownloadTemplate(){
+  const csv=['assignment_id,protocol,client_name,title','123456,2026-0001,Cliente A,Religação','123457,2026-0002,Cliente B,Alteração cadastral'].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='modelo_encaminhamento_lote.csv';a.click();URL.revokeObjectURL(url);
+}
+
+function rpaImportNormalizeHeader(value=''){
+  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+}
+
+function rpaImportReadCsv(text){
+  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(line=>line.trim());
+  if(!lines.length)return [];
+  const parseLine=(line)=>{const out=[];let cur='',inQuotes=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(inQuotes&&line[i+1]==='"'){cur+='"';i++;}else inQuotes=!inQuotes;}else if(ch===','&&!inQuotes){out.push(cur);cur='';}else cur+=ch;}out.push(cur);return out.map(v=>v.trim());};
+  const headers=parseLine(lines[0]);
+  return lines.slice(1).map(line=>{const cols=parseLine(line);const row={};headers.forEach((header,index)=>row[header]=cols[index]??'');return row;});
+}
+
+async function rpaImportReadFile(file){
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  if(ext==='xlsx'||ext==='xls'){
+    const buffer=await file.arrayBuffer();
+    const wb=XLSX.read(buffer,{type:'array'});
+    const sheet=wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(sheet,{defval:''});
+  }
+  const raw=await file.text();
+  return rpaImportReadCsv(raw);
+}
+
+function rpaImportMapRow(raw,index){
+  const normalized={};
+  Object.entries(raw||{}).forEach(([key,value])=>{normalized[rpaImportNormalizeHeader(key)]=value;});
+  const assignmentId=String(normalized.assignment_id||normalized.assignmentid||normalized.solicitation_id||normalized.solicitacao_id||normalized.request_id||normalized.id_solicitacao||'').trim();
+  return {rowNumber:index+2,assignmentId,protocol:String(normalized.protocol||normalized.protocolo||'').trim(),clientName:String(normalized.client_name||normalized.cliente||'').trim(),title:String(normalized.title||normalized.titulo||normalized.assunto||'').trim(),valid:/^\d+$/.test(assignmentId),error:assignmentId?'':'Cabeçalho/valor de assignment_id ausente'};
+}
+
+async function rpaImportHandleFile(event){
+  const file=event.target.files?.[0];
+  if(!file){showToast('Selecione um arquivo.','error');return;}
+  try{
+    const rows=await rpaImportReadFile(file);
+    const mapped=rows.map((row,index)=>rpaImportMapRow(row,index));
+    const validRows=mapped.filter(row=>row.valid);
+    const invalidRows=mapped.filter(row=>!row.valid);
+    const seen=new Set();
+    rpaImportRows=validRows.filter(row=>{if(seen.has(row.assignmentId))return false;seen.add(row.assignmentId);return true;});
+    rpaImportSelected=new Set(rpaImportRows.map(row=>row.assignmentId));
+    document.getElementById('rpiFileInfo').innerHTML=`<div><strong>Arquivo:</strong> ${esc(file.name)}</div><div><strong>Linhas válidas:</strong> ${rpaImportRows.length}</div><div><strong>Linhas inválidas:</strong> ${invalidRows.length}</div>`;
+    document.getElementById('rpiS3').classList.remove('hidden');
+    document.getElementById('rpiS4').classList.remove('hidden');
+    document.getElementById('rpiS5').classList.remove('hidden');
+    document.getElementById('rpiS6').classList.remove('hidden');
+    document.getElementById('rpiS7').classList.remove('hidden');
+    rpaImportRenderRows();
+    await rpaImportLoadParams();
+    showToast(rpaImportRows.length?`${rpaImportRows.length} solicitação(ões) importada(s).`:'Nenhuma linha válida encontrada.',rpaImportRows.length?'success':'error');
+  }catch(e){showToast('Erro ao ler arquivo: '+e.message,'error');}
+}
+
+async function rpaImportLoadParams(){
+  if(!rpaToken){showToast('Gere o token antes de carregar os parâmetros.','error');return;}
+  try{
+    const url=gv('rpi-url').replace(/\/$/,'');
+    const motivesEndpoint=`${url}:45715/external/integrations/thirdparty/projects/solicitation/forward/motives`;
+    const statusesEndpoint=`${url}:45715/external/integrations/thirdparty/projects/solicitation/forward/incident-status`;
+    rpaImportLog('req',`GET ${motivesEndpoint}`);rpaImportLog('req',`GET ${statusesEndpoint}`);
+    const [motiveResp,statusResp]=await Promise.all([
+      fetch(rpaImportProxy(motivesEndpoint),{headers:{'Authorization':`Bearer ${rpaToken}`,'Content-Type':'application/json'}}),
+      fetch(rpaImportProxy(statusesEndpoint),{headers:{'Authorization':`Bearer ${rpaToken}`,'Content-Type':'application/json'}})
+    ]);
+    const motiveText=await motiveResp.text();const statusText=await statusResp.text();
+    if(!motiveResp.ok)throw new Error(`Motivos: ${motiveResp.status} ${motiveText}`);
+    if(!statusResp.ok)throw new Error(`Status: ${statusResp.status} ${statusText}`);
+    rpaImportMotives=rpaExtractArray(JSON.parse(motiveText));
+    rpaImportStatuses=rpaExtractArray(JSON.parse(statusText));
+    rpaFillSelect('rpi-motive',rpaImportMotives);rpaFillSelect('rpi-status',rpaImportStatuses);
+    rpaImportLog('ok',`Parâmetros carregados | motivos: ${rpaImportMotives.length} | status: ${rpaImportStatuses.length}`);
+  }catch(e){showToast('Erro ao carregar parâmetros: '+e.message,'error');}
+}
+
+function rpaImportRenderRows(){
+  const body=document.getElementById('rpiRows');
+  const summary=document.getElementById('rpiSummary');
+  const allChecked=rpaImportRows.length>0&&rpaImportRows.every(row=>rpaImportSelected.has(row.assignmentId));
+  document.getElementById('rpiSelectAll').checked=allChecked;
+  summary.textContent=`${rpaImportSelected.size} selecionada(s) de ${rpaImportRows.length}`;
+  if(!rpaImportRows.length){body.innerHTML='<tr><td colspan="5" class="empty-state">Nenhuma linha importada.</td></tr>';return;}
+  body.innerHTML=rpaImportRows.map(row=>{const checked=rpaImportSelected.has(row.assignmentId);return `<tr><td><input type="checkbox" ${checked?'checked':''} onclick="rpaImportToggle('${row.assignmentId}')"></td><td>${esc(row.assignmentId)}</td><td>${esc(row.protocol||'-')}</td><td>${esc(row.clientName||'-')}</td><td>${esc(row.title||'-')}</td></tr>`;}).join('');
+}
+
+function rpaImportToggle(assignmentId){if(rpaImportSelected.has(assignmentId))rpaImportSelected.delete(assignmentId);else rpaImportSelected.add(assignmentId);rpaImportRenderRows();}
+function rpaImportToggleAll(){const checked=document.getElementById('rpiSelectAll').checked;if(checked)rpaImportRows.forEach(row=>rpaImportSelected.add(row.assignmentId));else rpaImportSelected.clear();rpaImportRenderRows();}
+
+function rpaImportConfirm(){
+  const teamId=gv('rpi-team').replace(/\D/g,'');
+  const motiveId=gv('rpi-motive');
+  const statusId=gv('rpi-status');
+  const description=gv('rpi-description');
+  document.getElementById('rpi-team').value=teamId;
+  if(!rpaToken){showToast('Gere o token antes de encaminhar.','error');return;}
+  if(!rpaImportSelected.size){showToast('Selecione ao menos uma solicitação.','error');return;}
+  if(!/^\d+$/.test(teamId)){showToast('Informe um Team ID numérico.','error');return;}
+  if(!motiveId){showToast('Selecione o motivo.','error');return;}
+  if(!statusId){showToast('Selecione o status.','error');return;}
+  if(!description){showToast('Informe a descrição do lote.','error');return;}
+  document.getElementById('modalTitle').textContent='Confirmar encaminhamento por planilha';
+  document.getElementById('modalDesc').textContent='Revise os dados antes de executar o lote:';
+  document.getElementById('modalDetail').innerHTML=`<div class="modal-detail-row"><span class="modal-detail-label">Solicitações</span><span class="modal-detail-value">${rpaImportSelected.size}</span></div><div class="modal-detail-row"><span class="modal-detail-label">Team ID</span><span class="modal-detail-value">${esc(teamId)}</span></div><div class="modal-detail-row"><span class="modal-detail-label">Motivo</span><span class="modal-detail-value">${esc(document.getElementById('rpi-motive').selectedOptions[0]?.text||'')}</span></div><div class="modal-detail-row"><span class="modal-detail-label">Status</span><span class="modal-detail-value">${esc(document.getElementById('rpi-status').selectedOptions[0]?.text||'')}</span></div><div class="modal-detail-row"><span class="modal-detail-label">Descrição</span><span class="modal-detail-value">${esc(description)}</span></div>`;
+  document.getElementById('modalActions').innerHTML=`<button class="btn btn-ghost" onclick="document.getElementById('confirmModal').classList.remove('active')">Cancelar</button><button class="btn btn-success btn-lg" onclick="rpaImportExec()">Confirmar</button>`;
+  document.getElementById('confirmModal').classList.add('active');
+}
+
+async function rpaImportExec(){
+  document.getElementById('confirmModal').classList.remove('active');
+  const url=gv('rpi-url').replace(/\/$/,'');
+  const endpoint=`${url}:45715/external/integrations/thirdparty/projects/solicitation/forward`;
+  const teamId=parseInt(gv('rpi-team'),10);
+  const routingMotiveId=parseInt(gv('rpi-motive'),10);
+  const incidentStatusId=parseInt(gv('rpi-status'),10);
+  const motive=gv('rpi-description');
+  const ids=[...rpaImportSelected];
+  const log=document.getElementById('rpiExecLog');
+  let ok=0,er=0;log.innerHTML='';document.getElementById('rpiLogCard').classList.remove('hidden');
+  for(let i=0;i<ids.length;i++){
+    const assignmentId=parseInt(ids[i],10);const time=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    try{
+      const body={assignmentId,routingMotiveId,teamId,responsibleId:null,motive,incidentStatusId};
+      rpaImportLog('req',`POST ${endpoint} | body: ${JSON.stringify(body)}`);
+      const r=await fetch(rpaImportProxy(endpoint),{method:'POST',headers:{'Authorization':`Bearer ${rpaToken}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const resp=await r.text();
+      if(!r.ok)throw new Error(`${r.status}: ${resp}`);
+      ok++;log.innerHTML=`<div class="log-entry"><span style="font-size:0.5rem;color:var(--text-tertiary)">${time}</span><span class="log-entry-status ok">OK</span>#${assignmentId} encaminhado</div>`+log.innerHTML;rpaImportLog('ok',`#${assignmentId} encaminhado`);
+    }catch(e){er++;log.innerHTML=`<div class="log-entry"><span style="font-size:0.5rem;color:var(--text-tertiary)">${time}</span><span class="log-entry-status err">ERR</span>#${assignmentId}: ${esc(e.message)}</div>`+log.innerHTML;rpaImportLog('err',`#${assignmentId}: ${e.message}`);}
+    if(i<ids.length-1)await new Promise(resolve=>setTimeout(resolve,350));
+  }
+  showToast(`Concluído: ${ok} ok, ${er} erro(s).`,er?'error':'success');
+}
+
+function renderRPAImport(){
+  const cfg=JSON.parse(localStorage.getItem('rbot_rpa_cfg')||'{}');
+  document.getElementById('page-rpa-import').innerHTML=`<div class="page-header"><div><h1 class="page-title">Encaminhamento por planilha</h1><p class="page-subtitle">Importe um CSV/XLSX com Assignment IDs e execute o encaminhamento em lote.</p></div></div>
+    <div class="card"><div class="card-title"><span class="step">1</span> Conexão com ERP</div><div class="grid-2"><div class="field full"><label>Proxy CORS</label><input type="text" id="rpi-proxy" class="mono" value="${esc(cfg.proxy||'')}" placeholder="https://proxy/"></div><div class="field full"><label>URL Base do ERP</label><input type="text" id="rpi-url" class="mono" value="${esc(cfg.url||'')}" placeholder="https://erp.cliente.com.br"></div><div class="field"><label>Client ID</label><input type="text" id="rpi-cid" class="mono" value="${esc(cfg.cid||'')}"></div><div class="field"><label>Client Secret</label><input type="password" id="rpi-cs" class="mono" value="${esc(cfg.cs||'')}"></div><div class="field full"><label>Syndata</label><input type="text" id="rpi-syn" class="mono" value="${esc(cfg.syn||'')}"></div></div><div class="actions-row"><button class="btn btn-warning" onclick="rpaImportAuth()"><i data-lucide="key" style="width:13px;height:13px"></i>Gerar Token</button><button class="btn btn-ghost" onclick="rpaImportSaveCfg()">Salvar Config</button></div><div class="rpa-status" id="rpiSt" style="display:none"></div><div class="api-console hidden" id="rpiConsole"></div></div>
+    <div class="card hidden" id="rpiS2"><div class="card-title"><span class="step">2</span> Importação da planilha</div><div class="data-card" style="margin-bottom:14px"><table class="data-table"><thead><tr><th>Coluna</th><th>Obrigatória</th><th>Descrição</th></tr></thead><tbody><tr><td>assignment_id</td><td>Sim</td><td>ID da solicitação para encaminhamento</td></tr><tr><td>protocol</td><td>Não</td><td>Conferência visual</td></tr><tr><td>client_name</td><td>Não</td><td>Conferência visual</td></tr><tr><td>title</td><td>Não</td><td>Conferência visual</td></tr></tbody></table></div><div class="actions-row"><button class="btn btn-ghost" onclick="rpaImportDownloadTemplate()"><i data-lucide="download" style="width:13px;height:13px"></i>Baixar modelo CSV</button></div><div class="field" style="margin-top:12px"><label>Arquivo CSV/XLSX</label><input type="file" id="rpi-file" accept=".csv,.xlsx,.xls" onchange="rpaImportHandleFile(event)"><span class="hint">A primeira aba do XLSX será utilizada.</span></div><div id="rpiFileInfo" style="font-size:0.6875rem;color:var(--text-secondary);margin-top:12px"></div></div>
+    <div class="card hidden" id="rpiS3"><div class="card-title"><span class="step">3</span> Equipe</div><div class="field"><label>Team ID</label><input type="text" id="rpi-team" class="mono" inputmode="numeric" placeholder="Informe o Team ID" oninput="this.value=this.value.replace(/\D/g,'')"></div></div>
+    <div class="card hidden" id="rpiS4"><div class="card-title"><span class="step">4</span> Motivo de solicitação</div><div class="field"><label>Motivo</label><select id="rpi-motive"><option value="">Selecione...</option></select></div></div>
+    <div class="card hidden" id="rpiS5"><div class="card-title"><span class="step">5</span> Status da solicitação</div><div class="field"><label>Status</label><select id="rpi-status"><option value="">Selecione...</option></select></div></div>
+    <div class="card hidden" id="rpiS6"><div class="card-title"><span class="step">6</span> Descrição</div><div class="field full"><label>Texto do relato</label><textarea id="rpi-description" placeholder="Texto que será enviado como descrição para todas as solicitações do lote"></textarea></div></div>
+    <div class="card hidden" id="rpiS7"><div class="card-title"><span class="step">7</span> Revisão e encaminhamento</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;flex-wrap:wrap"><span style="font-size:0.625rem;font-weight:700;color:var(--accent)" id="rpiSummary">0 selecionada(s)</span><label class="select-all-label"><input type="checkbox" id="rpiSelectAll" onchange="rpaImportToggleAll()"> Todas</label></div><div class="data-card"><table class="data-table"><thead><tr><th></th><th>Assignment ID</th><th>Protocolo</th><th>Cliente</th><th>Título</th></tr></thead><tbody id="rpiRows"></tbody></table></div><div class="actions-row" style="margin-top:14px"><button class="btn btn-success btn-lg" onclick="rpaImportConfirm()"><i data-lucide="send" style="width:13px;height:13px"></i>Encaminhar lote</button></div></div>
+    <div class="card hidden" id="rpiLogCard"><div class="card-title"><i data-lucide="terminal" style="width:13px;height:13px"></i> Log de execução</div><div style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:3px" id="rpiExecLog"></div></div>`;
+  lucide.createIcons();
+}
 
 // === UTILS ===
 function esc(s){if(!s)return '';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
