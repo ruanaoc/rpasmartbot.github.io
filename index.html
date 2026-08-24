@@ -235,7 +235,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 <div class="modal-overlay" id="confirmModal"><div class="modal-card"><div class="modal-title" id="modalTitle"></div><div class="modal-desc" id="modalDesc"></div><div class="modal-detail" id="modalDetail"></div><div class="modal-actions" id="modalActions"></div></div></div>
 <div class="toast" id="toast"></div>
 <script>
-const SUPABASE_URL='https://wugifjmxthsrrgthhipe.supabase.co',SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Z2lmam14dGhzcnJndGhoaXBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjUyNTAsImV4cCI6MjEwMTY0MTI1MH0.egtSH42NLwY9hybjmphkN8G8PG0krY18DIQPzjXHKkQ';
+const SUPABASE_URL='https://eeoaqapnwluehijmbbtq.supabase.co',SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Z2lmam14dGhzcnJndGhoaXBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjUyNTAsImV4cCI6MjEwMTY0MTI1MH0.egtSH42NLwY9hybjmphkN8G8PG0krY18DIQPzjXHKkQ';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let gmailToken=null,gmailTokenClient=null;
 function getSettings(){return JSON.parse(localStorage.getItem('rbot_settings')||'{}');}
