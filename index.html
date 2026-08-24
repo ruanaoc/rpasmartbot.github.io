@@ -1,6 +1,3 @@
-
-
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -247,8 +244,8 @@ function connectGmail(){const cid=getGmailClientId();if(!cid){showToast('Configu
 function updateGmailStatus(on){const d=document.getElementById('gmailDot'),l=document.getElementById('gmailStatusLabel');if(d)d.className='auth-dot '+(on?'on':'off');if(l)l.textContent=on?'Gmail on':'Gmail off';}
 
 // === GMAIL SEND (with image support) ===
-async function sendGmailEmail(to,subject,htmlBody,imageBase64){if(!gmailToken)return false;try{const recipients=(to||'').split(',').map(email=>email.trim()).filter(Boolean);if(!recipients.length)return false;let raw;if(imageBase64&&imageBase64.startsWith('data:')){const boundary='b_'+Date.now();const imageType=imageBase64.split(';')[0].split(':')[1];const imageData=imageBase64.split(',')[1];const htmlFinal=htmlBody.replace('{{IMAGE_CID}}','<img src="cid:incident-image" style="width:100%;border-radius:8px;margin-top:16px">');let mime=`From:me
-To:me
+async function sendGmailEmail(to,subject,htmlBody,imageBase64){if(!gmailToken)return false;try{const recipients=(to||'').split(',').map(email=>email.trim()).filter(Boolean);if(!recipients.length)return false;const visibleTo='undisclosed-recipients:;';let raw;if(imageBase64&&imageBase64.startsWith('data:')){const boundary='b_'+Date.now();const imageType=imageBase64.split(';')[0].split(':')[1];const imageData=imageBase64.split(',')[1];const htmlFinal=htmlBody.replace('{{IMAGE_CID}}','<img src="cid:incident-image" style="width:100%;border-radius:8px;margin-top:16px">');let mime=`From:me
+To:${visibleTo}
 Bcc:${recipients.join(', ')}
 Subject:=?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=
 MIME-Version:1.0
@@ -267,7 +264,7 @@ Content-Disposition:inline;filename="evidencia.png"
 
 ${imageData}
 --${boundary}--`;raw=btoa(unescape(encodeURIComponent(mime))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}else{const htmlFinal=htmlBody.replace('{{IMAGE_CID}}','');const mime=`From:me
-To:me
+To:${visibleTo}
 Bcc:${recipients.join(', ')}
 Subject:=?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=
 MIME-Version:1.0
