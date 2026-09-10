@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -247,8 +249,7 @@ function updateGmailStatus(on){const d=document.getElementById('gmailDot'),l=doc
 async function sendGmailEmail(to,subject,htmlBody,imageBase64){
   if(!gmailToken)return { ok:false, error:'Gmail não conectado.' };
   try{
-    const recipients=[...new Set(String(to||'').split(/[;,
-]+/).map(email=>email.trim()).filter(Boolean))];
+    const recipients=[...new Set(String(to||'').split(/[;,\n]+/).map(email=>email.trim()).filter(Boolean))];
     if(!recipients.length)return { ok:false, error:'Nenhum destinatário válido informado.' };
 
     const visibleTo='undisclosed-recipients:;';
@@ -261,8 +262,7 @@ async function sendGmailEmail(to,subject,htmlBody,imageBase64){
       }
       return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
     };
-    const wrapBase64=(value)=>String(value||'').replace(/\s+/g,'').match(/.{1,76}/g)?.join('
-')||'';
+    const wrapBase64=(value)=>String(value||'').replace(/\s+/g,'').match(/.{1,76}/g)?.join('\\r\\n')||'';
     const subjectEncoded=`=?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
     const htmlFinal=htmlBody.replace(
       '{{IMAGE_CID}}',
@@ -300,8 +300,7 @@ async function sendGmailEmail(to,subject,htmlBody,imageBase64){
         imageData,
         '',
         `--${boundary}--`
-      ].join('
-');
+      ].join('\\r\\n');
     }else{
       mime=[
         `To: ${visibleTo}`,
@@ -312,8 +311,7 @@ async function sendGmailEmail(to,subject,htmlBody,imageBase64){
         'Content-Transfer-Encoding: 8bit',
         '',
         htmlFinal
-      ].join('
-');
+      ].join('\\r\\n');
     }
 
     const raw=encodeBase64Url(mime);
